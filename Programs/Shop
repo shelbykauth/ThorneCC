@@ -1,0 +1,19 @@
+--[[
+    Author: Dartania Thorne
+    A shop program that allows a seller to setup trades
+    and a buyer to make those trades.
+]]--
+
+local function RunShop ()
+
+end --function
+
+-- Login as Seller and Setup Trades
+local function SetupTradeWindow()
+
+end --function
+
+-- Login as Buyer and View Trades
+local function ViewTradesWindow()
+
+end --function
