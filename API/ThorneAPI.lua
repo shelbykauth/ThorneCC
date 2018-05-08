@@ -40,6 +40,32 @@ function Display (lines, scroll, highlight, options)
     end --for
 end --function
 
+function Load(path, default, writeDefault)
+    --[[
+        Author: Dartania
+        Returns the object contained at the given path
+            or the default if not available.
+        Writes the default object to the path if the object is not available
+            and the writeDefault flag is true.
+    ]]--
+    local file
+    local data
+    local exists = fs.exists(path)
+    if (fs.exists(path)) then
+        file = fs.open(path, "r")
+        data = textutils.unserialize(file.readAll())
+        file.close()
+    else
+        data = default
+        if (writeDefault) then
+            file = fs.open(path, "w")
+            file.write(textutils.serialize(data))
+            file.close()
+        end --if
+    end --if
+    return data
+end --function
+
 function Hash(str)
     --[[
         Author: gnush
