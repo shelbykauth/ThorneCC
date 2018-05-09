@@ -6,7 +6,7 @@ local itemListPath = dataPath.."itemList.dat"
 local mySettings = {}
 local myChestList = {}
 local availableChests = {}
-os.loadAPI(/thorne/ThorneAPI.lua)
+os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
 
 
 function start ()
@@ -110,7 +110,7 @@ function getNextAvailableSpot(startChestName, startSlot, itemName)
             for i=i1, size do
                 local item = c.getItemMeta(i)
                 if (item.count < item.maxCount) then
-                    
+
                 end --if
             end --for
         end --if
