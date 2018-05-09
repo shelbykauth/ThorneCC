@@ -38,7 +38,7 @@ for i = 1,27 do
     argsList["nameAndSlots"][2][i] = i
     argsList["wrapAndSlots"][2][i] = i
 end --for
-argsList["MoveItems"] = {{"self"}, {1,2,3,4,5,6,7,8,9}, 1, {1,2,3,4,5,6,7,8,9,10}}
+argsList["MoveItems"] = {{"self"}, {1,2,3,4,5,6,7,8,9}, {1}, {1,2,3,4,5,6,7,8,9,10}}
 
 
 print(BenchmarkAPI.FormatBenchmarkFunction("Chest Peripheral Wrapping", Wrapping, argsList["wrapping"]))
