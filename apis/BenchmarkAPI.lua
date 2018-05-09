@@ -11,10 +11,10 @@ function BenchmarkFunction(func, argsList, count)
         for k,v in ipairs(argsList) do
             args[k] = v[(i % table.getn(v)) + 1]
         end --for
-        func(table.unpack(args))
     end --for
     local overheadTime = os.clock() - startTime
-    startTime = os.clock()
+    startTime1 = os.clock()
+    startTime2 = os.time()
     for i=1,count do
         args = {}
         for k,v in ipairs(argsList) do
@@ -23,7 +23,11 @@ function BenchmarkFunction(func, argsList, count)
         func(table.unpack(args))
     end --for
     local totalTime = os.clock() - startTime
-    return totalTime, overheadTime
+    local results = {
+        totalTime = totalTime,
+        overheadTime = overheadTime,
+    }
+    return results
 end --function
 
 function BenchmarkProgram(path, argsList, count)
@@ -37,8 +41,9 @@ function FormatBenchmarkFunction(name, func, argsList, count)
     if (count == nil) then
         count = 1000
     end --if
-    result, overhead = BenchmarkFunction (func, argsList, count)
-    local str = "Test '"..name.."' ran "..count.." times in "..result.."ms.\n"
-    str = str .. "Compare to "..overhead.."ms for overhead.(without function)"
+    local results = BenchmarkFunction (func, argsList, count)
+    local str = "Test '"..name.."' ran "..count.." times.\n"
+    str = str .. "Time taken: "..results.totalTime.." seconds, "
+    str = str .. "Overhead: "..results.overheadTime.." seconds"
     return str
 end --function
