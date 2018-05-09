@@ -33,12 +33,12 @@ local argsList = {}
 
 argsList["wrapping"] = {{chestName}}
 argsList["nameAndSlots"] = {{chestName}, {}}
-argsList["wrapAndSlots"] = {{peripheral.wrap(chestName)}, {}}
+argsList["wrapAndSlots"] = {{chest}, {}}
 for i = 1,27 do
     argsList["nameAndSlots"][2][i] = i
     argsList["wrapAndSlots"][2][i] = i
 end --for
-argsList["moveItems"] = {{"self"}, {1,2,3,4,5,6,7,8,9}, {1}, {1,2,3,4,5,6,7,8,9,10}}
+argsList["moveItems"] = {{chest}, {1,2,3,4,5,6,7,8,9}, {1,2,3,4,5,6,7,8,9,10}}
 
 
 print(BenchmarkAPI.FormatBenchmarkFunction("Chest Peripheral Wrapping", Wrapping, argsList["wrapping"]))
