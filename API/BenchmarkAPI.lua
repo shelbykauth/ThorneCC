@@ -43,7 +43,7 @@ function FormatBenchmarkFunction(name, func, argsList, count)
     end --if
     local results = BenchmarkFunction (func, argsList, count)
     local str = "Test '"..name.."' ran "..count.." times.\n"
-    str = str .. "Time took: "..results.totalTime.." seconds, "
-    str = str .. "Overhead: "..results.overheadTime.."seconds"
+    str = str .. "Time taken: "..results.totalTime.." seconds, "
+    str = str .. "Overhead: "..results.overheadTime.." seconds"
     return str
 end --function
