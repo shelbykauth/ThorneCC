@@ -1,4 +1,4 @@
-os.loadAPI("/thorne/BenchmarkAPI.lua")
+os.loadAPI("/ThorneCC/API/BenchmarkAPI.lua")
 
 local tArgs = {...}
 local chestName = tArgs[1]
