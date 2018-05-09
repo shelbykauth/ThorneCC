@@ -10,6 +10,9 @@ if (chestName == nil) then
             chest = peri
             chestName = name
         end --if
+        if (peri.playNote) then
+            speaker = peri
+        end --if
     end --for
 end --if
 
@@ -39,5 +42,10 @@ argsList["MoveItems"] = {{"self"}, {1,2,3,4,5,6,7,8,9}, 1, {1,2,3,4,5,6,7,8,9,10
 
 
 print(BenchmarkAPI.FormatBenchmarkFunction("Chest Peripheral Wrapping", Wrapping, argsList["wrapping"]))
+if (speaker) then speaker.playNote("Harp", 10, 15)
 print(BenchmarkAPI.FormatBenchmarkFunction("Wrap and getItemMeta", WrapAndGetItemMeta, argsList["nameAndSlots"], 100))
+if (speaker) then speaker.playNote("Harp", 10, 15)
 print(BenchmarkAPI.FormatBenchmarkFunction("Wrap once and getItemMeta", GetItemMeta, argsList["wrapAndSlots"], 100))
+if (speaker) then speaker.playNote("Harp", 10, 15)
+print(BenchmarkAPI.FormatBenchmarkFunction("MoveItems 1", MoveItem, argsList["moveItems"], 100))
+if (speaker) then speaker.playNote("Harp", 10, 15)
