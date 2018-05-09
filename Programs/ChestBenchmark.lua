@@ -1,7 +1,17 @@
 os.loadAPI("/ThorneCC/API/BenchmarkAPI.lua")
 
-local tArgs = {...}
-local chestName = tArgs[1]
+--local tArgs = {...}
+--local chestName = tArgs[1]
+local chestName, chest, speaker
+if (chestName == nil) then
+    for k,name in peripheral.getNames() do
+        local peri = peripheral.wrap(name)
+        if (peri.getTransferLocations) then
+            chest = peri
+            chestName = name
+        end --if
+    end --for
+end --if
 
 function Wrapping (chest)
     local c = peripheral.wrap(chest)
