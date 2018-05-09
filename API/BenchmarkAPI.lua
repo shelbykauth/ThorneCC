@@ -23,11 +23,11 @@ function BenchmarkFunction(func, argsList, count)
         func(table.unpack(args))
     end --for
     local totalTime = os.clock() - startTime
-    results = {
+    local results = {
         totalTime = totalTime,
         overheadTime = overheadTime,
     }
-    return result
+    return results
 end --function
 
 function BenchmarkProgram(path, argsList, count)
@@ -41,7 +41,7 @@ function FormatBenchmarkFunction(name, func, argsList, count)
     if (count == nil) then
         count = 1000
     end --if
-    results, overhead = BenchmarkFunction (func, argsList, count)
+    local results = BenchmarkFunction (func, argsList, count)
     local str = "Test '"..name.."' ran "..count.." times.\n"
     str = str .. "Time took: "..results.totalTime.." seconds, "
     str = str .. "Overhead: "..results.overheadTime.."seconds"
