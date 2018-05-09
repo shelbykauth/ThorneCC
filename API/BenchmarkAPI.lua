@@ -5,16 +5,14 @@ function BenchmarkFunction(func, argsList, count)
     if (count == nil) then
         count = 1000
     end --if
-    local startTime1 = os.clock()
-    local startTime2 = os.time()
+    local startTime = os.clock()
     for i=1,count do
         args = {}
         for k,v in ipairs(argsList) do
             args[k] = v[(i % table.getn(v)) + 1]
         end --for
     end --for
-    local overheadTime1 = os.clock() - startTime1
-    local overheadTime2 = os.time() - startTime2
+    local overheadTime = os.clock() - startTime
     startTime1 = os.clock()
     startTime2 = os.time()
     for i=1,count do
@@ -24,13 +22,10 @@ function BenchmarkFunction(func, argsList, count)
         end --for
         func(table.unpack(args))
     end --for
-    local totalTime1 = os.clock() - startTime1
-    local totalTime2 = os.time() - startTime2
-    result = {
-        totalComputerTime = totalTime1,
-        totalSystemTime = totalTime2,
-        overheadComputerTime = overheadTime1,
-        overheadSystemTime = overheadTime2,
+    local totalTime = os.clock() - startTime
+    results = {
+        totalTime = totalTime,
+        overheadTime = overheadTime,
     }
     return result
 end --function
@@ -46,9 +41,9 @@ function FormatBenchmarkFunction(name, func, argsList, count)
     if (count == nil) then
         count = 1000
     end --if
-    result, overhead = BenchmarkFunction (func, argsList, count)
+    results, overhead = BenchmarkFunction (func, argsList, count)
     local str = "Test '"..name.."' ran "..count.." times.\n"
-    str = str .. "Time took: "..result.totalComputerTime.."computer seconds, "..result.totalSystemTime.."Minecraft Time.\n"
-    str = str .. "Overhead: "..result.overheadComputerTime.."computer seconds, "..result.overheadSystemTime.."Minecraft Time."
+    str = str .. "Time took: "..results.totalTime.." seconds, "
+    str = str .. "Overhead: "..results.overheadTime.."seconds"
     return str
 end --function
