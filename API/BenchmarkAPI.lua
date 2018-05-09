@@ -5,7 +5,18 @@ function BenchmarkFunction(func, argsList, count)
     if (count == nil) then
         count = 1000
     end --if
-    local startTime = os.clock()
+    local startTime1 = os.clock()
+    local startTime2 = os.time()
+    for i=1,count do
+        args = {}
+        for k,v in ipairs(argsList) do
+            args[k] = v[(i % table.getn(v)) + 1]
+        end --for
+    end --for
+    local overheadTime1 = os.clock() - startTime1
+    local overheadTime2 = os.time() - startTime2
+    startTime1 = os.clock()
+    startTime2 = os.time()
     for i=1,count do
         args = {}
         for k,v in ipairs(argsList) do
@@ -13,17 +24,15 @@ function BenchmarkFunction(func, argsList, count)
         end --for
         func(table.unpack(args))
     end --for
-    local overheadTime = os.clock() - startTime
-    startTime = os.clock()
-    for i=1,count do
-        args = {}
-        for k,v in ipairs(argsList) do
-            args[k] = v[(i % table.getn(v)) + 1]
-        end --for
-        func(table.unpack(args))
-    end --for
-    local totalTime = os.clock() - startTime
-    return totalTime, overheadTime
+    local totalTime1 = os.clock() - startTime1
+    local totalTime2 = os.time() - startTime2
+    result = {
+        totalComputerTime = totalTime1
+        totalSystemTime = totalTime2
+        overheadComputerTime = overheadTime1
+        overheadSystemTime = overheadTime2
+    }
+    return result
 end --function
 
 function BenchmarkProgram(path, argsList, count)
@@ -38,7 +47,8 @@ function FormatBenchmarkFunction(name, func, argsList, count)
         count = 1000
     end --if
     result, overhead = BenchmarkFunction (func, argsList, count)
-    local str = "Test '"..name.."' ran "..count.." times in "..result.."ms.\n"
-    str = str .. "Compare to "..overhead.."ms for overhead.(without function)"
+    local str = "Test '"..name.."' ran "..count.." times.\n"
+    str = str .. "Time took: "..result.totalComputerTime.."computer seconds, "..result.totalSystemTime.."Minecraft Time.\n"
+    str = str .. "Overhead: "..result.overheadComputerTime.."computer seconds, "..result.overheadSystemTime.."Minecraft Time."
     return str
 end --function
