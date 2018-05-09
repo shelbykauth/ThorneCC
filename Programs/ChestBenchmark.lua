@@ -4,7 +4,7 @@ os.loadAPI("/ThorneCC/API/BenchmarkAPI.lua")
 --local chestName = tArgs[1]
 local chestName, chest, speaker
 if (chestName == nil) then
-    for k,name in peripheral.getNames() do
+    for k,name in ipairs(peripheral.getNames()) do
         local peri = peripheral.wrap(name)
         if (peri.getTransferLocations) then
             chest = peri
