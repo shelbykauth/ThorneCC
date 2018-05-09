@@ -24,5 +24,5 @@ for i = 1,27 do
 end --for
 
 print(BenchmarkAPI.FormatBenchmarkFunction("Chest Peripheral Wrapping", Wrapping, argsList["wrapping"]))
-print(BenchmarkAPI.FormatBenchmarkFunction("Wrap and getItemMeta", WrapAndGetItemMeta, argsList["nameAndSlots"]), 100)
-print(BenchmarkAPI.FormatBenchmarkFunction("Wrap once and getItemMeta", GetItemMeta, argsList["wrapAndSlots"]), 100)
+print(BenchmarkAPI.FormatBenchmarkFunction("Wrap and getItemMeta", WrapAndGetItemMeta, argsList["nameAndSlots"], 100))
+print(BenchmarkAPI.FormatBenchmarkFunction("Wrap once and getItemMeta", GetItemMeta, argsList["wrapAndSlots"], 100))
