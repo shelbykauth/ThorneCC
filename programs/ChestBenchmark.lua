@@ -26,7 +26,7 @@ function GetItemMeta (wrapped, slot)
     local item = wrapped.getItemMeta(slot)
 end --function
 function MoveItem (chest, a, b)
-    chest.pullItem("self", a, 1, b)
+    chest.pullItems("self", a, 1, b)
 end --function
 
 local argsList = {}
