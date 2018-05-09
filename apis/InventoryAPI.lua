@@ -1,10 +1,11 @@
-local dataPath = "/thorne/inventory/data/"
+local dataPath = "/ThorneCC/data/inventory/"
 local settingsPath = dataPath.."settings.dat"
 local stockPath = dataPath.."stock/"
 local chestListPath = dataPath.."chestList.dat"
 local itemListPath = dataPath.."itemList.dat"
 local mySettings = {}
 local myChestList = {}
+local myItemList = {}
 local availableChests = {}
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
 
@@ -13,6 +14,7 @@ function start ()
     loadSettings ()
     loadChests()
     loadItemList()
+    resetChestList()
 end --function
 
 function loadSettings ()
@@ -40,6 +42,11 @@ function loadItem (rawName)
     return ThorneAPI.Load(stockPath .. rawName .. ".dat", nil, false)
 end --function
 
+function loadItemList ()
+    myItemList = ThorneAPI.Load(itemListPath, {}, true)
+
+end --function
+
 function recordItemAt (chestName, slot)
     local meta = peripheral.call(chestName, "getItemMeta", slot)
     local stored = loadItem(meta.rawName)
@@ -57,7 +64,6 @@ function recordItemAt (chestName, slot)
         }
         file = fs.open(itemListPath, "a")
         file.writeLine(meta.rawName)
-        the
     end --if
     if (meta.maxCount == 1) then
         -- Each thing needs its own information
@@ -91,7 +97,9 @@ function getFirstAvailableSpot(itemName)
         local size = c.size()
         for i = 1,size do
             local item = c.getItemMeta(i)
-            if (item.count < item.maxCount)
+            if (item.count < item.maxCount) then
+
+            end --if
         end --for
     end --for
 end --function
@@ -154,8 +162,9 @@ function resetChestList()
     local transferLocations = {}
     local allChests = {}
     local openChests = {}
-    if (mySettings.RetrievalChest ~= "") then
-        loc = peripheral.call(mySettings.RetrievalChest, "getTransferLocations")
+    local mainChest = peripheral.wrap(mySettings.RetrievalChest or "")
+    if (mainChest) then
+        loc = mainChest.getTransferLocations()
         for k,v in ipairs(loc) do
             transferLocations[v] = true
         end --for
@@ -163,7 +172,7 @@ function resetChestList()
     for k,v in ipairs(allPeripherals) do
         if (peripheral.wrap(v)).getTransferLocations then
             allChests[v] = true
-            if (transferLocations[v]) then
+            if (transferLocations[v] or not mainChest) then
                 table.insert(openChests, v)
             end --if
         end --if
@@ -171,7 +180,7 @@ function resetChestList()
     local f = fs.open(chestListPath, "w")
     f.write(textutils.serialize(openChests))
     f.close()
-    loadChests
+    loadChests()
 end --function
 
 function recountEverything()
