@@ -27,10 +27,10 @@ function BenchmarkFunction(func, argsList, count)
     local totalTime1 = os.clock() - startTime1
     local totalTime2 = os.time() - startTime2
     result = {
-        totalComputerTime = totalTime1
-        totalSystemTime = totalTime2
-        overheadComputerTime = overheadTime1
-        overheadSystemTime = overheadTime2
+        totalComputerTime = totalTime1,
+        totalSystemTime = totalTime2,
+        overheadComputerTime = overheadTime1,
+        overheadSystemTime = overheadTime2,
     }
     return result
 end --function
