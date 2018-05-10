@@ -17,6 +17,11 @@ function start ()
     resetChestList()
 end --function
 
+function reset (andRestart)
+    fs.delete(dataPath)
+    if (andRestart) then start() end
+end --function
+
 function loadSettings ()
     defaultSettings = {
         RetrievalChest = "",
