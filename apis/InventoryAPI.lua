@@ -33,6 +33,16 @@ function loadSettings ()
         LockDelay = 1,
     }
     savedSettings = ThorneAPI.Load(settingsPath, defaultSettings, true)
+    for k,v in pairs(defaultSettings) do
+        if (savedSettings[k] == nil) then
+            savedSettings[k] = v
+        end --if
+    end --for
+    saveSettings(savedSettings)
+end --function
+
+function loadItemList ()
+    myItemList = ThorneAPI.Load(itemListPath, {}, true)
 end --function
 
 function loadChests ()
@@ -43,13 +53,21 @@ function loadChests ()
     end --if
 end --function
 
-function loadItem (rawName)
-    return ThorneAPI.Load(stockPath .. rawName .. ".dat", nil, false)
+function saveSettings(newSettings)
+    for k,v in pairs(newSettings) do
+        mySettings[k] = v
+    end --for
+    saveObject(mySettings, settingsPath)
 end --function
 
-function loadItemList ()
-    myItemList = ThorneAPI.Load(itemListPath, {}, true)
+function saveObject(obj, path)
+    local file = fs.open(path, "w")
+    file.write(textutils.serialize(obj))
+    file.close()
+end --function
 
+function loadItem (rawName)
+    return ThorneAPI.Load(stockPath .. rawName .. ".dat", nil, false)
 end --function
 
 function recordItemAt (chestName, slot)
@@ -190,14 +208,28 @@ end --function
 
 function chooseRetrievalChest ()
     local peris = peripheral.getNames()
+    local chests = {}
     local lines = {}
-    for k,v in peris do
+    local scroll = 0
+    local selection = 1
+    local options = {
+        before = 1,
+        after = 1,
+    }
+    for k,v in ipairs(peris) do
         local p = peripheral.wrap(v)
         if (p.getTransferLocations) then
+            table.insert(chests, v)
             table.insert(lines, v .. "("..peripheral.getType(v)..")")
+            if (mySettings.RetrievalChest == v) then
+                selection = table.getn(chests)
+            end --if
         end --if
     end --for
-    
+    selection = ThorneAPI.SimpleSelectionScreen(lines, selection, options)
+    local newSettings = {RetrievalChest = chests[selection]}
+    saveSettings(newSettings)
+    resetChestList()
 end --function
 
 function recountEverything()
