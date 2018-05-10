@@ -183,6 +183,18 @@ function resetChestList()
     loadChests()
 end --function
 
+function chooseRetrievalChest ()
+    local peris = peripheral.getNames()
+    local lines = {}
+    for k,v in peris do
+        local p = peripheral.wrap(v)
+        if (p.getTransferLocations) then
+            table.insert(lines, v .. "("..peripheral.getType(v)..")")
+        end --if
+    end --for
+    
+end --function
+
 function recountEverything()
     resetItemLocations()
     resetChestList()
