@@ -34,10 +34,38 @@ function Display (lines, scroll, highlight, options)
                 term.setBackgroundColor(colors.black)
                 term.setTextColor(colors.white)
             else
-                term.write(l..": "..lines[l])
+                term.write(lines[l])
             end --if
         end --if
     end --for
+end --function
+
+function SimpleSelectionScreen(lines, selected, options)
+    local oSelected = selected
+    local scroll = 0
+    local width, height = term.getSize()
+    height = height - options.before - options.after
+    local n = table.getn(lines)
+    local ev, key, held
+    repeat
+        if (selected < 1) then selected = 1 end
+        if (selected > n) then selected = n end
+        if (scroll > selected) then scroll = selected end
+        if (scroll < selected - height) then scroll = selected - height end
+        Display(lines, scroll, selected, options)
+        ev, key, held = os.pullEvent("key")
+        if (key == keys.up) then
+            selected = selected - 1
+        end --if
+        if (key == keys.down) then
+            selected = selected + 1
+        end --if
+    until key == keys.backspace or key == keys.enter
+    if (key == keys.enter) then
+        return selected
+    else
+        return oSelected
+    end --if
 end --function
 
 function Load(path, default, writeDefault)
