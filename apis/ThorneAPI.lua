@@ -136,7 +136,7 @@ function ComplexSelectionScreen(lines, selected, options, controls)
     repeat
         if (selected < 1) then selected = 1 end
         if (selected > n) then selected = n end
-        if (scroll > selected) then scroll = selected end
+        if (scroll > selected - 1) then scroll = selected - 1 end
         if (scroll < selected - height) then scroll = selected - height end
         Display(lines, scroll, selected, options)
         ev, key, held = os.pullEvent("key")
