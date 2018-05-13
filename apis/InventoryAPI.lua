@@ -226,6 +226,7 @@ function chooseRetrievalChest ()
     local options = {
         title = "Choose Which Chest To Retrieve Items From"
     }
+    loadSettings()
     for k,v in ipairs(peris) do
         local p = peripheral.wrap(v)
         if (p.getTransferLocations) then
