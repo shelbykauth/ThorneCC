@@ -5,8 +5,9 @@ local chestListPath = dataPath.."chestList.dat"
 local itemListPath = dataPath.."itemList.dat"
 local mySettings = {}
 local myChestList = {}
-local myItemList = {}
-local displayedItemList = {}
+local myItemList = {} -- complete array of all rawNames
+local displayedItemList = {} -- partial array of displayed items, as rawNames
+local displayedItemLines = {} -- partial array of displayed items, as formatted lines
 local availableChests = {}
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
 
@@ -259,23 +260,29 @@ function chooseRetrievalChest ()
     resetChestList()
 end --function
 
+function getDisplayLine(rawName)
+    local width, height = term.getSize()
+    item = loadItem(rawName)
+    local name = " " .. item.displayName
+    local count = "("..item.sCount.."/"..item.rCount..")"
+    if (string.len(name) < width - string.len(count)) then
+        name = name .. string.rep(" ", width - string.len(count) - string.len(name))
+    end --if
+    if (string.len(name) > width - string.len(count)) then
+        name = string.sub(name, 1, width - string.len(count) - 3) .. "..."
+    end --if
+    local line = name .. count
+    return line
+end --function
+
 function listItems ()
     term.clear()
-    local width, height = term.getSize()
     loadItemList()
     displayedItemList = {}
+    displayedItemLines = {}
     for k,v in pairs(myItemList) do
-        local item = loadItem(v)
-        local name = " " ..item.displayName
-        local count = "("..item.sCount.. "/" .. item.rCount..")"
-        if (string.len(name) < width - string.len(count)) then
-            name = name .. string.rep(" ", width - string.len(count) - string.len(name))
-        end --if
-        if (string.len(name) > width - string.len(count)) then
-            name = string.sub(name, 1, width - string.len(count) - 3) .. "..."
-        end --if
-        local line = name .. count
-        table.insert(displayedItemList, line)
+        table.insert(displayedItemList, v)
+        table.insert(displayedItemLines, getDisplayLine(v))
     end --for
     local controls = {
         key = {
@@ -288,7 +295,7 @@ function listItems ()
         before = 0,
         after = 0,
     }
-    ThorneAPI.ComplexSelectionScreen(displayedItemList, 1, options, controls)
+    ThorneAPI.ComplexSelectionScreen(displayedItemLines, 1, options, controls)
     term.clear()
     term.setCursorPos(1,1)
 end --function
@@ -296,7 +303,19 @@ end --function
 function sortScreen()
     --TODO: Make choice screen for all the sorting methods.
     --      It will call sortBy(key)
-    sortBy("")
+    local lines = {
+        "Nevermind",
+        "Display Name",
+        "Id Name",
+        "Raw Name",
+        "OreDictionary",
+    }
+    local options = {
+        title = "Choose a field to sort by."
+    }
+    local selection = 1
+    selection = ThorneAPI.SimpleSelectionScreen(lines, selection, options)
+    sortBy(lines[selection])
 end --function
 
 function sortBy(key)
@@ -305,6 +324,42 @@ function sortBy(key)
     --      and the table that links displayedItems to the rawNames.
     --table.sort(displayedItemList)
     --
+    sortFunctions = {
+        ["Display Name"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return string.lower(itemA.displayName) < string.lower(itemB.displayName)
+        end, -- function
+        ["Id Name"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return string.lower(itemA.name) < string.lower(itemB.name)
+        end, -- function
+        ["Raw Name"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return a < b
+        end, -- function
+        ["OreDictionary"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return string.lower(itemA.ores and itemA.ores[1] or "") < string.lower(itemB.ores and itemB.ores[1] or "")
+        end, -- function
+    }
+    if (not sortFunctions[key]) then
+        return false
+    end --if
+    table.sort(displayedItemList, sortFunctions[key])
+    for k in pairs(displayedItemLines) do
+        displayedItemLines[k] = nil
+    end --for
+    for k,v in ipairs(displayedItemList) do
+        displayedItemLines[k] = getDisplayLine(v)
+    end --for
+end --function
+
+function filterScreen()
+    --TODO: Make filterScreen
 end --function
 
 function recountEverything()
