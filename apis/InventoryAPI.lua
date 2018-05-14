@@ -6,6 +6,7 @@ local itemListPath = dataPath.."itemList.dat"
 local mySettings = {}
 local myChestList = {}
 local myItemList = {}
+local displayedItemList = {}
 local availableChests = {}
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
 
@@ -262,7 +263,7 @@ function listItems ()
     term.clear()
     local width, height = term.getSize()
     loadItemList()
-    local lines = {}
+    displayedItemList = {}
     for k,v in pairs(myItemList) do
         local item = loadItem(v)
         local name = " " ..item.displayName
@@ -274,9 +275,36 @@ function listItems ()
             name = string.sub(name, 1, width - string.len(count) - 3) .. "..."
         end --if
         local line = name .. count
-        table.insert(lines, line)
+        table.insert(displayedItemList, line)
     end --for
-    ThorneAPI.SimpleSelectionScreen(lines, 1, {title = "Item List: "..table.getn(lines).." items available"})
+    local controls = {
+        key = {
+            [keys.s] = sortScreen,
+        },
+    }
+    local options = {
+        title = "Item List: "..table.getn(displayedItemList).." items available (stored/retrieved)",
+        footer = {"(F)ind (S)ort (H)elp"},
+        before = 0,
+        after = 0,
+    }
+    ThorneAPI.ComplexSelectionScreen(displayedItemList, 1, options, controls)
+    term.clear()
+    term.setCursorPos(1,1)
+end --function
+
+function sortScreen()
+    --TODO: Make choice screen for all the sorting methods.
+    --      It will call sortBy(key)
+    sortBy("")
+end --function
+
+function sortBy(key)
+    --TODO: Make sortBy function
+    --      It will mutate the actual myItemList table, the displayedItems table,
+    --      and the table that links displayedItems to the rawNames.
+    --table.sort(displayedItemList)
+    --
 end --function
 
 function recountEverything()

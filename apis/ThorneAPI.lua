@@ -155,7 +155,7 @@ function ComplexSelectionScreen(lines, selected, options, controls)
         Display(lines, scroll, selected, options)
         local ev, p1, p2, p3, p4, p5 = os.pullEvent()
         local action = followTree({ev, p1, p2, p3, p4, p5}, controls)
-        if (type(action) == 'function') then action() end
+        if (type(action) == 'function') then action(lines, scroll, selected) end
         if (type(action) == 'string') then
             if action == 'stepUp' then
                 selected = selected - 1
