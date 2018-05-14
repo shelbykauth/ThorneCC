@@ -114,7 +114,6 @@ function SimpleSelectionScreen(lines, selected, options)
         options.before = options.before + 1
         CenterPrint(options.title, 1)
     end --if
-    CenterPrint(textutils.serialize(options), height - 5)
     CenterPrint("'Enter' to select, 'Backspace' to quit.", height)
     local result = ComplexSelectionScreen(lines, selected, options, {})
     term.clear()
