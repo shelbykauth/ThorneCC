@@ -123,37 +123,65 @@ function SimpleSelectionScreen(lines, selected, options)
 end --function
 
 function ComplexSelectionScreen(lines, selected, options, controls)
+    --[[
+        string[] lines represents the list of selectable items.
+        int selected represents the currently selected item.
+        {} options represents the various options that can be applied,
+            currently using the 'before' and 'after' values to limit the height
+        {{{}}} controls represents what happens at each step.  This is a tree
+            controls[event][p1][p2][p3][p4][p5], which can stop at any point and
+            the value is a function that is executed or a string to represent
+            the action to be taken (where it needs to affect local variables)
+    ]]--
     local oSelected = selected
     local scroll = 0
     local width, height = term.getSize()
     height = height - options.before - options.after
     local n = table.getn(lines)
-    local ev, key, held
-    controls[keys.up] = nil
-    controls[keys.down] = nil
-    controls[keys.backspace] = nil
-    controls[keys.enter] = nil
+    controls["key"] = controls["key"] or {}
+    controls["key"][keys.up] = "stepUp"
+    controls["key"][keys.down] = "stepDown"
+    controls["key"][keys.backspace] = "escape"
+    controls["key"][keys.enter] = "enter"
+    local ended = false
     repeat
         if (selected < 1) then selected = 1 end
         if (selected > n) then selected = n end
         if (scroll > selected - 1) then scroll = selected - 1 end
         if (scroll < selected - height) then scroll = selected - height end
         Display(lines, scroll, selected, options)
-        ev, key, held = os.pullEvent("key")
-        if (key == keys.up) then
-            selected = selected - 1
+        local ev, p1, p2, p3, p4, p5 = os.pullEvent()
+        local action = followTree({ev, p1, p2, p3, p4, p5}, controls)
+        if (type(action) == 'function') then action() end
+        if (type(action) == 'string') then
+            if action == 'stepUp' then
+                selected = selected - 1
+            elseif action == 'stepDown' then
+                selected = selected + 1
+            elseif action == 'escape' then
+                selected = oSelected
+                ended = true
+            elseif action == 'enter' then
+                ended = true
+            else
+                --Unrecognized Action
+            end --if
         end --if
-        if (key == keys.down) then
-            selected = selected + 1
-        end --if
-        if (controls[key]) then
-            controls[key]()
-        end --if
-    until key == keys.backspace or key == keys.enter
-    if (key == keys.enter) then
-        return selected
-    else
-        return oSelected
+    until ended
+    return selected
+end --function
+
+function followTree(path, tree, findingType)
+    if (tree == nil or table.getn(path) == 0) then
+        return tree
+    end --if
+    if (type(tree) == 'table') then
+        tree = tree[path[1]]
+        table.remove(path, 1)
+        return followTree(path, tree, findingType)
+    end --if
+    if (type(tree) == findingType or findingType == nil) then
+        return tree
     end --if
 end --function
 
