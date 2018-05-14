@@ -120,6 +120,20 @@ function recordItemAt (chestName, slot)
     myItemList[meta.rawName] = true
 end --function
 
+function verifyItemLocatons (rawName)
+    local item = loadItem(rawName)
+    for k,v in pairs(item.locations) do
+        actualItem = peripheral.wrap(v.chest).getItemMeta(v.slot)
+        if (actualItem == nil) then
+            item.locations[k] = nil
+        elseif (actualItem.rawName ~= rawName) then
+            item.locations[k] = nil
+            recordItemAt(v.chest, v.slot)
+        end --if
+    end --for
+    ThorneAPI.SaveObject(item, stockPath..rawName..".dat")
+end --function
+
 function getChestAndSlot(locationName)
     return string.match(locationName, "(.+)_Slot_(.+)")
     -- chestName, slot = getChestAndSlot(locationName)
