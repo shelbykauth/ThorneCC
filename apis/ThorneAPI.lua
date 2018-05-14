@@ -93,7 +93,7 @@ function CenterPrint(lines, y)
         y = height / 2 - table.getn(lines) / 2
     end --if
     for k,v in ipairs(lines) do
-        local x = width / 2 - string.len(v) / 2
+        local x = width / 2 - string.len(v) / 2 + 1
         term.setCursorPos(x, y)
         term.clearLine()
         term.write(v)
@@ -105,16 +105,8 @@ function SimpleSelectionScreen(lines, selected, options)
     local width,height = term.getSize()
     if (type(options) ~= 'table') then options = {} end
     if (not options.before) then options.before = 0 end
-    if (not options.after) then
-        options.after = 1
-    else
-        options.after = options.after + 1
-    end --if
-    if (options.title) then
-        options.before = options.before + 1
-        CenterPrint(options.title, 1)
-    end --if
-    CenterPrint("'Enter' to select, 'Backspace' to quit.", height)
+    if (not options.after) then options.after = 0 end
+    options.footer = "'Enter' to select, 'Backspace' to quit."
     local result = ComplexSelectionScreen(lines, selected, options, {})
     term.clear()
     term.setCursorPos(1,1)
@@ -135,7 +127,13 @@ function ComplexSelectionScreen(lines, selected, options, controls)
     local oSelected = selected
     local scroll = 0
     local width, height = term.getSize()
-    height = height - options.before - options.after
+    if (options.title) then
+        options.before = options.before + 1
+    end --if
+    if (options.footer) then
+        options.after = options.after + 1
+    end --if
+    local displayHeight = height - options.before - options.after
     local n = table.getn(lines)
     controls["key"] = controls["key"] or {}
     controls["key"][keys.up] = "stepUp"
@@ -147,7 +145,13 @@ function ComplexSelectionScreen(lines, selected, options, controls)
         if (selected < 1) then selected = 1 end
         if (selected > n) then selected = n end
         if (scroll > selected - 1) then scroll = selected - 1 end
-        if (scroll < selected - height) then scroll = selected - height end
+        if (scroll < selected - displayHeight) then scroll = selected - displayHeight end
+        if (options.title) then
+            CenterPrint(options.title, 1)
+        end --if
+        if (options.footer) then
+            CenterPrint(options.footer, height)
+        end --if
         Display(lines, scroll, selected, options)
         local ev, p1, p2, p3, p4, p5 = os.pullEvent()
         local action = followTree({ev, p1, p2, p3, p4, p5}, controls)
