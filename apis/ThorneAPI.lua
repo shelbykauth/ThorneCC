@@ -50,7 +50,7 @@ function LoadingScreen(text, currentCount, finalCount)
     if (type(currentCount) ~= 'number') then currentCount = 0 end
     if (type(finalCount) ~= 'number') then finalCount = 100 end
     local percentage = string.format("(%.2f %%)", currentCount / finalCount * 100)
-    local divider = "------------------"
+    local divider = string.rep("-", string.len(text) + 4)
     local progress = currentCount.."/"..finalCount.." Completed "..percentage
     --TODO: Loading Bar
     term.clear()
@@ -107,7 +107,15 @@ function SimpleSelectionScreen(lines, selected, options)
     if (not options.before) then options.before = 0 end
     if (not options.after) then options.after = 0 end
     options.footer = "'Enter' to select, 'Backspace' to quit."
-    local result = ComplexSelectionScreen(lines, selected, options, {})
+    local controls = {
+        key = {
+            [keys.up] = "stepUp",
+            [keys.down] = "stepDown",
+            [keys.backspace] = "escape",
+            [keys.enter] = "enter",
+        }
+    }
+    local result = ComplexSelectionScreen(lines, selected, options, controls)
     term.clear()
     term.setCursorPos(1,1)
     return result
@@ -124,6 +132,12 @@ function ComplexSelectionScreen(lines, selected, options, controls)
             the value is a function that is executed or a string to represent
             the action to be taken (where it needs to affect local variables)
     ]]--
+    if (not lines) then return false end
+    if (not selected) then selected = 1 end
+    if (not options) then options = {} end
+    if (not controls) then controls = {} end
+    controls['key'] = controls['key'] or {}
+    controls['key'][keys.backspace] = 'escape'
     local oSelected = selected
     local scroll = 0
     local width, height = term.getSize()
@@ -135,11 +149,6 @@ function ComplexSelectionScreen(lines, selected, options, controls)
     end --if
     local displayHeight = height - options.before - options.after
     local n = table.getn(lines)
-    controls["key"] = controls["key"] or {}
-    controls["key"][keys.up] = "stepUp"
-    controls["key"][keys.down] = "stepDown"
-    controls["key"][keys.backspace] = "escape"
-    controls["key"][keys.enter] = "enter"
     local ended = false
     repeat
         if (selected < 1) then selected = 1 end
@@ -155,7 +164,7 @@ function ComplexSelectionScreen(lines, selected, options, controls)
         Display(lines, scroll, selected, options)
         local ev, p1, p2, p3, p4, p5 = os.pullEvent()
         local action = followTree({ev, p1, p2, p3, p4, p5}, controls)
-        if (type(action) == 'function') then action(lines, scroll, selected) end
+        if (type(action) == 'function') then action(selected) end
         if (type(action) == 'string') then
             if action == 'stepUp' then
                 selected = selected - 1
@@ -248,6 +257,16 @@ function SaveObject(obj, path)
     local file = fs.open(path, "w")
     file.write(textutils.serialize(obj))
     file.close()
+end --function
+
+function Alert()
+    peris = peripheral.getNames()
+    for k,v in ipairs(peris) do
+        local t = peripheral.getType(v)
+        if (t == 'speaker') then
+            peripheral.call(v, "playNote", "harp", 10, 10)
+        end --if
+    end --for
 end --function
 
 function Hash(str)

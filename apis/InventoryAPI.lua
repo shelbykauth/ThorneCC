@@ -9,6 +9,7 @@ local myItemList = {} -- complete array of all rawNames
 local displayedItemList = {} -- partial array of displayed items, as rawNames
 local displayedItemLines = {} -- partial array of displayed items, as formatted lines
 local availableChests = {}
+local locationsList = {}
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
 
 
@@ -65,12 +66,13 @@ function saveSettings(newSettings)
 end --function
 
 function loadItem (rawName)
+    if (not rawName) then return false end
     local item = ThorneAPI.LoadObject(stockPath .. rawName .. ".dat", nil, false)
     if (item == nil) then return nil end
     local rCount = 0
     local sCount = 0
     for k,v in pairs(item.locations) do
-        if (v.chest == mainChest) then
+        if (v.chest == mySettings.RetrievalChest) then
             rCount = rCount + v.count
         else
             sCount = sCount + v.count
@@ -84,7 +86,12 @@ end --function
 function recordItemAt (chestName, slot)
     local meta = peripheral.call(chestName, "getItemMeta", slot)
     if (meta == nil) then
+        locationsList[chestName][slot] = nil
         return false
+    end --if
+    if (locationsList[chestName][slot] ~= meta.rawName) then
+        verifyItemLocatons(locationsList[chestName][slot])
+        locationsList[chestName][slot] = meta.rawName
     end --if
     local stored = loadItem(meta.rawName)
     if (stored == nil) then
@@ -124,6 +131,7 @@ end --function
 
 function verifyItemLocatons (rawName)
     local item = loadItem(rawName)
+    if (not item) then return false end
     for k,v in pairs(item.locations) do
         actualItem = peripheral.wrap(v.chest).getItemMeta(v.slot)
         if (actualItem == nil) then
@@ -202,6 +210,9 @@ function resetItemLocations()
         f.write(textutils.serialize(info))
         f.close()
     end --for
+    for k,v in pairs(locationsList) do
+        locationsList[k] = {}
+    end --for
 end --function
 
 function resetChestList()
@@ -222,6 +233,7 @@ function resetChestList()
     for k,v in ipairs(allPeripherals) do
         if (peripheral.wrap(v)).getTransferLocations then
             allChests[v] = true
+            locationsList[v] = {}
             if (transferLocations[v] or not mainChest) then
                 table.insert(openChests, v)
             end --if
@@ -287,17 +299,47 @@ function listItems ()
     local controls = {
         key = {
             [keys.s] = sortScreen,
+            [keys.i] = itemInfoScreen,
+            [keys.up] = 'stepUp',
+            [keys.down] = 'stepDown',
+            [keys.enter] = itemInfoScreen,
+            [keys.backspace] = 'escape',
+            [keys.left] = dumpItem,
+            [keys.right] = retrieveItem
         },
     }
     local options = {
         title = "Item List: "..table.getn(displayedItemList).." items available (stored/retrieved)",
-        footer = {"(F)ind (S)ort (H)elp"},
+        footer = {"(I)nfo (F)ind (S)ort (H)elp"},
         before = 0,
         after = 0,
     }
     ThorneAPI.ComplexSelectionScreen(displayedItemLines, 1, options, controls)
     term.clear()
     term.setCursorPos(1,1)
+end --function
+
+function itemInfoScreen(selected)
+    local item = loadItem(displayedItemList[selected])
+    local info = {}
+    local match = string.gmatch(textutils.serialize(item), "[^\r\n]+")
+    for l in match do
+        table.insert(info, l)
+    end --for
+    ThorneAPI.SimpleSelectionScreen(info)
+end --function
+
+function dumpItem(selection)
+    local item = loadItem(displayedItemList[selected])
+    for k,v in item.locations do
+        if (v.chest == mySettings.RetrievalChest) then
+            
+        end --if
+    end --for
+end --function
+
+function retrieveItem(selection)
+
 end --function
 
 function sortScreen()
@@ -349,6 +391,7 @@ function sortBy(key)
     if (not sortFunctions[key]) then
         return false
     end --if
+    ThorneAPI.LoadingScreen("Sorting Inventory List")
     table.sort(displayedItemList, sortFunctions[key])
     for k in pairs(displayedItemLines) do
         displayedItemLines[k] = nil
@@ -382,4 +425,5 @@ function recountEverything()
         end --for
     end --for
     ThorneAPI.LoadingScreen("Recording Inventory Slots", currentSlots, totalSlots)
+    ThorneAPI.Alert()
 end --function
