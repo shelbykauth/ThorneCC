@@ -85,51 +85,48 @@ end --function
 
 function recordItemAt (chestName, slot)
     local meta = peripheral.call(chestName, "getItemMeta", slot)
+    local former = locationsList[chestName][slot]
+    local identifier
+    local storedItem
     if (meta == nil) then
-        locationsList[chestName][slot] = nil
+        if (former) then verifyItemLocations(former) end
         return false
     end --if
-    if (locationsList[chestName][slot] ~= meta.rawName) then
-        verifyItemLocatons(locationsList[chestName][slot])
-        locationsList[chestName][slot] = meta.rawName
+    if (former and former ~= meta.rawName and former ~= meta.nbtHash) then
+        verifyItemLocations(former)
+        return
     end --if
-    local stored = loadItem(meta.rawName)
-    if (stored == nil) then
-        stored = {
+    if (meta.nbtHash) then
+        identifier = meta.nbtHash
+    else
+        identifier = meta.rawName
+    end --if
+    storedItem = loadItem(identifier)
+    if (storedItem == nil) then
+        storedItem = {
             name = meta.name,
             rawName = meta.rawName,
             displayName = meta.displayName,
             maxCount = meta.maxCount,
-            ores = meta.ores,
             locations = {
                 --{chest, slot, count, extraInfo},
-            }
+            },
+            meta = meta,
         }
         myItemList = ThorneAPI.LoadObject(itemListPath, {}, true)
-        table.insert(myItemList, meta.rawName)
+        table.insert(myItemList, identifier)
         ThorneAPI.SaveObject(myItemList, itemListPath)
     end --if
-    if (meta.maxCount == 1) then
-        -- Each thing needs its own information
-        stored.locations[chestName .. "_Slot_" .. slot] = {
-            chest = chestName,
-            slot = slot,
-            count = meta.count,
-            extraInfo = meta,
-        }
-    else
-        -- Store everything together
-        stored.locations[chestName .. "_Slot_" .. slot] = {
-            chest = chestName,
-            slot = slot,
-            count = meta.count,
-        }
-    end --if
-    ThorneAPI.SaveObject(stored, stockPath..meta.rawName..".dat")
-    myItemList[meta.rawName] = true
+    storedItem.locations[chestName .. "_Slot_" .. slot] = {
+        chest = chestName,
+        slot = slot,
+        count = meta.count,
+    }
+    ThorneAPI.SaveObject(storedItem, stockPath..identifier..".dat")
+    --myItemList[identifier] = true
 end --function
 
-function verifyItemLocatons (rawName)
+function verifyItemLocations (rawName)
     local item = loadItem(rawName)
     if (not item) then return false end
     for k,v in pairs(item.locations) do
@@ -266,9 +263,10 @@ function chooseRetrievalChest ()
     resetChestList()
 end --function
 
-function getDisplayLine(rawName)
+function getDisplayLine(identifier)
     local width, height = term.getSize()
-    item = loadItem(rawName)
+    print(item)
+    item = loadItem(identifier)
     local name = " " .. item.displayName
     local count = "("..item.sCount.."/"..item.rCount..")"
     if (string.len(name) < width - string.len(count)) then
@@ -374,12 +372,12 @@ function sortBy(key)
         ["Raw Name"] = function(a, b)
             local itemA = loadItem(a)
             local itemB = loadItem(b)
-            return a < b
+            return string.lower(itemA.rawName) < string.lower(itemB.rawName)
         end, -- function
         ["OreDictionary"] = function(a, b)
             local itemA = loadItem(a)
             local itemB = loadItem(b)
-            return string.lower(itemA.ores and itemA.ores[1] or "") < string.lower(itemB.ores and itemB.ores[1] or "")
+            return string.lower(itemA.meta.ores and itemA.ores[1] or "") < string.lower(itemB.ores and itemB.ores[1] or "")
         end, -- function
     }
     if (not sortFunctions[key]) then
