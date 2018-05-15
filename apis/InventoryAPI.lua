@@ -163,23 +163,17 @@ function getFirstAvailableSpot(itemName)
 end --function
 
 function getNextAvailableSpot(startChestName, startSlot, itemName)
-    local found = (chestName == nil)
-    for k,chest in ipairs(myChestList) do
-        local i1 = 1
-        if (chestName == startChestName) then
-            i1 = startSlot + 1
-            found = true
-        end --if
-        if (found) then
-            local c = peripheral.wrap(chest)
-            local size = c.size()
-            for i=i1, size do
-                local item = c.getItemMeta(i)
-                if (item.count < item.maxCount) then
-
-                end --if
-            end --for
-        end --if
+    found = (startChestName == nil)
+    for name,slots in locationsList do
+        found = found or (name == startChestName)
+        for slot,item in slots do
+            if (found and item == nil and name ~= mySettings.RetrievalChest) then
+                return name, slot
+            end --if
+            if ((startChestName == name and slot == startSlot)) then
+                found = true
+            end --if
+        end --for
     end --for
 end --function
 
@@ -333,7 +327,7 @@ function dumpItem(selection)
     local item = loadItem(displayedItemList[selected])
     for k,v in item.locations do
         if (v.chest == mySettings.RetrievalChest) then
-            
+
         end --if
     end --for
 end --function
