@@ -101,6 +101,16 @@ function CenterPrint(lines, y)
     end --for
 
 end --function
+
+function LookAtObject(obj)
+    local lines = {}
+    local matches = string.gmatch(textutils.serialize(obj), "[^\n\r]+")
+    for s in matches do
+        table.insert(lines, s)
+    end --for
+    SimpleSelectionScreen(lines, 1)
+end --function
+
 function SimpleSelectionScreen(lines, selected, options)
     local width,height = term.getSize()
     if (type(options) ~= 'table') then options = {} end
