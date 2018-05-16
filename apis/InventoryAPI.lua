@@ -125,6 +125,12 @@ function saveItem (item, identifier)
 end --function
 
 function recordItemAt (chestName, slot)
+    if (type(chestName) ~= 'string') then
+        error ("bad argument #1, (chestName expected, got "..type(chestName)..")", 2)
+    end --if
+    if (type(slot) ~= 'number') then
+        error ("bad argument #2, (slotNumber expected, got "..type(slot)..")", 2)
+    end --if
     local meta = peripheral.call(chestName, "getItemMeta", slot)
     local former = myLocationList[chestName][slot]
     local identifier
@@ -186,7 +192,7 @@ function verifyItemLocations (identifier)
         actualItem = peripheral.wrap(v.chest).getItemMeta(v.slot)
         if (actualItem == nil or (actualItem.rawName ~= identifier) or (actualItem.nbtHash ~= identifier)) then
             item.locations[k] = nil
-            myLocationsList[v.chest][v.slot] = "nil"
+            myLocationList[v.chest][v.slot] = "nil"
             recordItemAt(v.chest, v.slot)
         end --if
     end --for
@@ -224,6 +230,15 @@ function getNextAvailableSpot(startChestName, startSlot, itemName)
                 found = true
             end --if
         end --for
+    end --for
+end --function
+
+function getNextAvailableSpotIn(chestName, startSlot, identifier)
+    loadLocations()
+    for slot,item in ipairs(myLocationList[chestName]) do
+        if (item == "nil") then
+            return chestName, slot
+        end --if
     end --for
 end --function
 
@@ -267,10 +282,6 @@ function dumpAll()
         os.pullEvent("key")
     end
     refreshItemLines()
-end --function
-
-function retrieve(item, count, chest, slot)
-
 end --function
 
 function resetItemLocations()
@@ -367,27 +378,25 @@ function listItems ()
     loadItemList()
     displayedItemList = {}
     displayedItemLines = {}
-    for k,v in pairs(myItemList) do
-        table.insert(displayedItemList, v)
-        table.insert(displayedItemLines, getDisplayLine(v))
-    end --for
     refreshItemLines()
     local controls = {
         key = {
             [keys.s] = sortScreen,
             [keys.i] = itemInfoScreen,
             [keys.d] = dumpAll,
+            [keys.h] = helpScreen,
+            [keys.r] = refreshRetrievalChest,
             [keys.up] = 'stepUp',
             [keys.down] = 'stepDown',
             [keys.enter] = itemInfoScreen,
             [keys.backspace] = 'escape',
-            [keys.left] = dumpItem,
-            [keys.right] = retrieveItem,
+            [keys.left] = dumpLine,
+            [keys.right] = retrieveLine,
         },
     }
     local options = {
         title = "Item List: "..table.getn(displayedItemList).." items available (stored/retrieved)",
-        footer = {"(I)nfo (F)ind (S)ort (H)elp"},
+        footer = {"(D)ump (I)nfo (F)ind (S)ort (H)elp (R)efresh"},
         before = 0,
         after = 0,
     }
@@ -406,17 +415,62 @@ function itemInfoScreen(selected)
     ThorneAPI.SimpleSelectionScreen(info)
 end --function
 
-function dumpItem(selection)
-    local item = loadItem(displayedItemList[selected])
-    for k,v in item.locations do
+function dumpLine(selection)
+    local item = loadItem(displayedItemList[selection])
+    for k,v in pairs(item.locations) do
         if (v.chest == mySettings.RetrievalChest) then
-
+            dumpFrom(v.chest, v.slot)
         end --if
     end --for
+    refreshItemLines()
 end --function
 
-function retrieveItem(selection)
+function retrieveLine(selection)
+    retrieveItem(displayedItemList[selection], 1)
+    refreshItemLines()
+end --function
 
+function retrieveItem(identifier, count)
+    item = loadItem(identifier)
+    if (not item) then
+        error("valid identifier expected, got "..type(identifier).." "..identifer, 2)
+    end --if
+    if (not count) then count = 64 end
+    for k,v in pairs(item.locations) do
+        if (v.chest ~= mySettings.RetrievalChest) then
+            retrieveFrom(v.chest, v.slot, count)
+            break
+        end --if
+    end --for
+    refreshItemLines()
+end --function
+
+function retrieveFrom(fChest, fSlot, count)
+    if (not count) then count = 64 end
+    local tChest, tSlot = getNextAvailableSpotIn(mySettings.RetrievalChest)
+    from = peripheral.wrap(fChest)
+    if (not from) then
+        error ("fromChest not a valid peripheral", 2)
+    end --if
+    if (not tChest or not tSlot) then
+        error ("getNextAvailableSpot() not returning valid results")
+    end --if
+    success = from.pushItems(tChest, fSlot, count, tSlot)
+    if (success) then
+        recordItemAt(fChest, fSlot)
+        recordItemAt(tChest, tSlot)
+    end --if
+    return success
+end --function
+
+function refreshRetrievalChest()
+    loadLocations()
+    local size = table.getn(myLocationList[mySettings.RetrievalChest])
+    for i=1,size do
+        ThorneAPI.LoadingScreen("Rechecking Retrieval Chest", i, size)
+        recordItemAt(mySettings.RetrievalChest, i)
+    end --for
+    refreshItemLines()
 end --function
 
 function refreshItemLines()
@@ -437,6 +491,10 @@ function refreshItemLines()
     for k,v in ipairs(displayedItemList) do
         table.insert(displayedItemLines, getDisplayLine(v))
     end --for
+end --function
+
+function helpScreen()
+
 end --function
 
 function sortScreen()
