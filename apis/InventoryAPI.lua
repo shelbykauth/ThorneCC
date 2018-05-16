@@ -12,6 +12,7 @@ local displayedItemLines = {} -- partial array of displayed items, as formatted 
 local availableChests = {}
 local myLocationList = {}
 local myDisplayFilters = {}
+local myDisplaySort = ""
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
 
 
@@ -47,6 +48,8 @@ function loadSettings ()
         DumpDelay = .1,
         StartMode = "retrieve",
         CurrentMode = "retrieve",
+        SortBy = "",
+        FilterBy = {},
         Password = "",
         AllowAccess = true,
         LockDelay = 1,
@@ -242,8 +245,10 @@ function dumpFrom(fChest, fSlot)
         error ("getNextAvailableSpot() not returning valid results")
     end --if
     success = from.pushItems(tChest, fSlot, 64, tSlot)
-    recordItemAt(fChest, fSlot)
-    recordItemAt(tChest, tSlot)
+    if (success) then
+        recordItemAt(fChest, fSlot)
+        recordItemAt(tChest, tSlot)
+    end --if
     return success
 end --function
 
@@ -366,6 +371,7 @@ function listItems ()
         table.insert(displayedItemList, v)
         table.insert(displayedItemLines, getDisplayLine(v))
     end --for
+    refreshItemLines()
     local controls = {
         key = {
             [keys.s] = sortScreen,
@@ -414,20 +420,22 @@ function retrieveItem(selection)
 end --function
 
 function refreshItemLines()
-    for k,v in ipairs(displayedItemList) do
+    loadItemList()
+    for k,v in pairs(displayedItemList) do
         displayedItemList[k] = nil
     end --for
-    for k in pairs(displayedItemLines) do
+    for k,v in pairs(displayedItemLines) do
         displayedItemLines[k] = nil
     end --for
     for k,v in ipairs(myItemList) do
-        displayedItemList[k] = v
+        table.insert(displayedItemList, v)
     end --for
     for k,v in ipairs(myDisplayFilters) do
         filterBy(v)
     end --for
+    sortBy(mySettings.SortBy)
     for k,v in ipairs(displayedItemList) do
-        displayedItemLines[k] = getDisplayLine(v)
+        table.insert(displayedItemLines, getDisplayLine(v))
     end --for
 end --function
 
@@ -446,7 +454,8 @@ function sortScreen()
     }
     local selection = 1
     selection = ThorneAPI.SimpleSelectionScreen(lines, selection, options)
-    sortBy(lines[selection])
+    saveSettings({SortBy=lines[selection]})
+    refreshItemLines()
 end --function
 
 function sortBy(key)
@@ -455,6 +464,8 @@ function sortBy(key)
     --      and the table that links displayedItems to the rawNames.
     --table.sort(displayedItemList)
     --
+    if (not key) then key = mySettings["SortBy"] end
+    saveSettings({SortBy=key})
     sortFunctions = {
         ["Display Name"] = function(a, b)
             local itemA = loadItem(a)
@@ -482,7 +493,6 @@ function sortBy(key)
     end --if
     ThorneAPI.LoadingScreen("Sorting Inventory List")
     table.sort(displayedItemList, sortFunctions[key])
-    refreshItemLines()
 end --function
 
 function filterBy(filter)
