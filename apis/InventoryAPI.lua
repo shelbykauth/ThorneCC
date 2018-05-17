@@ -129,7 +129,7 @@ end --function
 function saveItem (item, identifier)
     ThorneAPI.CatchTypeError(item, "table", "#1", "Item Meta Object")
     if (identifier == nil) then
-        identifier = item.nbtHash or item.rawName
+        identifier = getIdentifier(item)
     end --if
     ThorneAPI.SaveObject(item, stockPath .. identifier .. ".dat")
 end --function
@@ -150,15 +150,11 @@ function recordItemAt (chestName, slot)
         if (former ~= "nil") then removeItemLocation(former, chestName, slot) end
         return false
     end --if
-    if (former ~= nil and former ~= "nil" and former ~= meta.rawName and former ~= meta.nbtHash) then
+    if (former ~= nil and former ~= "nil" and former ~= getIdentifier(meta)) then
         local oldItem = loadItem(former)
         removeItemLocation(former, chestName, slot)
     end --if
-    if (meta.nbtHash) then
-        identifier = meta.nbtHash
-    else
-        identifier = meta.rawName
-    end --if
+    identifier = getIdentifier(meta)
     myLocationList[chestName][slot] = identifier
     storedItem = loadItem(identifier)
     if (storedItem == nil) then
@@ -200,7 +196,7 @@ function verifyItemLocations (identifier)
     if (not item) then return false end
     for k,v in pairs(item.locations) do
         actualItem = peripheral.wrap(v.chest).getItemMeta(v.slot)
-        if (actualItem == nil or (actualItem.rawName ~= identifier) or (actualItem.nbtHash ~= identifier)) then
+        if (actualItem == nil or identifier ~= getIdentifier(actualItem)) then
             item.locations[k] = nil
             myLocationList[v.chest][v.slot] = "nil"
             recordItemAt(v.chest, v.slot)
