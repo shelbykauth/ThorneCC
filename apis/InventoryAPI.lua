@@ -1,18 +1,46 @@
-local dataPath = "/thorne/inventory/data/"
+local dataPath = "/ThorneCC/data/inventory/"
 local settingsPath = dataPath.."settings.dat"
 local stockPath = dataPath.."stock/"
 local chestListPath = dataPath.."chestList.dat"
 local itemListPath = dataPath.."itemList.dat"
+local locationListPath = dataPath.."locationList.dat"
 local mySettings = {}
 local myChestList = {}
+local myItemList = {} -- complete array of all identifiers
+local displayedItemList = {} -- partial array of displayed items, as identifiers
+local displayedItemLines = {} -- partial array of displayed items, as formatted lines
 local availableChests = {}
+local myLocationList = {}
+local myDisplayFilters = {}
+local myDisplaySort = ""
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
+os.loadAPI("/ThorneCC/apis/ThorneKeys.lua")
 
 
 function start ()
-    loadSettings ()
+    resetChestList()
+    loadStoredData()
+end --function
+
+function loadStoredData()
+    loadSettings()
     loadChests()
     loadItemList()
+    loadLocations()
+end --function
+
+function saveStoredData()
+    saveSettings({})
+    ThorneAPI.SaveObject(myChestList, chestListPath)
+    ThorneAPI.SaveObject(myItemList, itemListPath)
+    ThorneAPI.SaveObject(myLocationList, locationListPath)
+end --function
+
+function reset (andRestart)
+    fs.delete(dataPath)
+    fs.makeDir(dataPath)
+    fs.makeDir(stockPath)
+    if (andRestart) then start() end
 end --function
 
 function loadSettings ()
@@ -21,63 +49,164 @@ function loadSettings ()
         DumpDelay = .1,
         StartMode = "retrieve",
         CurrentMode = "retrieve",
+        SortBy = "",
+        FilterBy = {},
         Password = "",
         AllowAccess = true,
         LockDelay = 1,
     }
-    savedSettings = ThorneAPI.Load(settingsPath, defaultSettings, true)
+    savedSettings = ThorneAPI.LoadObject(settingsPath, defaultSettings, true)
+    for k,v in pairs(defaultSettings) do
+        if (savedSettings[k] == nil) then
+            savedSettings[k] = v
+        end --if
+    end --for
+    saveSettings(savedSettings)
+end --function
+
+function loadItemList ()
+    myItemList = ThorneAPI.LoadObject(itemListPath, {}, true)
 end --function
 
 function loadChests ()
-    myChestList = ThorneAPI.Load(chestListPath, nil, false)
+    myChestList = ThorneAPI.LoadObject(chestListPath, nil, false)
     if (myChestList == nil) then
         resetChestList()
-        myChestList = ThorneAPI.Load(chestListPath, {}, true)
     end --if
 end --function
 
-function loadItem (rawName)
-    return ThorneAPI.Load(stockPath .. rawName .. ".dat", nil, false)
+function loadLocations()
+    myLocationList = ThorneAPI.LoadObject(locationListPath, nil, false)
+    if (myLocationList == nil) then
+        myLocationList = {}
+        for k,v in pairs(myChestList) do
+            s = peripheral.call(v, "size")
+            myLocationList[v] = {size = s}
+            for i=1,s do
+                myLocationList[v][i] = "nil"
+            end --for
+        end --for
+    end --if
+    ThorneAPI.SaveObject(myLocationList, locationListPath)
+end --function
+
+function saveSettings(newSettings)
+    for k,v in pairs(newSettings) do
+        mySettings[k] = v
+    end --for
+    ThorneAPI.SaveObject(mySettings, settingsPath)
+end --function
+
+function getIdentifier(item)
+    ThorneAPI.CatchTypeError(item, "table", "#1", "Item Meta Object")
+    local id = ""
+    if (nbtHash) then return nbtHash end
+    id = item.name
+    if (item.damage) then
+        id = id .. "_" .. item.damage
+    end --if
+    return id
+end --function
+
+function loadItem (identifier)
+    if (not identifier) then return false end
+    local item = ThorneAPI.LoadObject(stockPath .. identifier .. ".dat", nil, false)
+    if (item == nil) then return nil end
+    local rCount = 0
+    local sCount = 0
+    for k,v in pairs(item.locations) do
+        if (v.chest == mySettings.RetrievalChest) then
+            rCount = rCount + v.count
+        else
+            sCount = sCount + v.count
+        end --if
+    end --for
+    item.rCount = rCount
+    item.sCount = sCount
+    return item
+end --function
+
+function saveItem (item, identifier)
+    ThorneAPI.CatchTypeError(item, "table", "#1", "Item Meta Object")
+    if (identifier == nil) then
+        identifier = item.nbtHash or item.rawName
+    end --if
+    ThorneAPI.SaveObject(item, stockPath .. identifier .. ".dat")
 end --function
 
 function recordItemAt (chestName, slot)
+    if (type(chestName) ~= 'string') then
+        error ("bad argument #1, (chestName expected, got "..type(chestName)..")", 2)
+    end --if
+    if (type(slot) ~= 'number') then
+        error ("bad argument #2, (slotNumber expected, got "..type(slot)..")", 2)
+    end --if
     local meta = peripheral.call(chestName, "getItemMeta", slot)
-    local stored = loadItem(meta.rawName)
-    local file
-    if (stored == nil) then
-        stored = {
+    local former = myLocationList[chestName][slot]
+    local identifier
+    local storedItem
+    if (meta == nil) then
+        myLocationList[chestName][slot] = "nil"
+        if (former ~= "nil") then removeItemLocation(former, chestName, slot) end
+        return false
+    end --if
+    if (former ~= nil and former ~= "nil" and former ~= meta.rawName and former ~= meta.nbtHash) then
+        local oldItem = loadItem(former)
+        removeItemLocation(former, chestName, slot)
+    end --if
+    if (meta.nbtHash) then
+        identifier = meta.nbtHash
+    else
+        identifier = meta.rawName
+    end --if
+    myLocationList[chestName][slot] = identifier
+    storedItem = loadItem(identifier)
+    if (storedItem == nil) then
+        storedItem = {
+            identifier = identifier,
             name = meta.name,
             rawName = meta.rawName,
             displayName = meta.displayName,
             maxCount = meta.maxCount,
-            ores = meta.ores,
             locations = {
-                --chest, slot, count, extraInfo
-            }
+                --{chest, slot, count, extraInfo},
+            },
+            meta = meta,
         }
-        file = fs.open(itemListPath, "a")
-        file.writeLine(meta.rawName)
-        the
+        myItemList = ThorneAPI.LoadObject(itemListPath, {}, true)
+        table.insert(myItemList, identifier)
+        ThorneAPI.SaveObject(myItemList, itemListPath)
     end --if
-    if (meta.maxCount == 1) then
-        -- Each thing needs its own information
-        stored.locations[chestName .. "_Slot_" .. slot] = {
-            chest = chestName,
-            slot = slot,
-            count = meta.count,
-            extraInfo = meta,
-        }
-    else
-        -- Store everything together
-        stored.locations[chestName .. "_Slot_" .. slot] = {
-            chest = chestName,
-            slot = slot,
-            count = meta.count,
-        }
-    end --if
-    local f = fs.open(stockPath .. meta.rawName .. ".dat", "w")
-    f.write(textutils.serialize(stored))
-    f.close()
+    storedItem.locations[chestName .. "_Slot_" .. slot] = {
+        chest = chestName,
+        slot = slot,
+        count = meta.count,
+    }
+    saveItem(storedItem, identifier)
+    saveStoredData()
+    --myItemList[identifier] = true
+end --function
+
+function removeItemLocation(identifier, chest, slot)
+    myLocationList[chest][slot] = "nil"
+    local item = loadItem(identifier)
+    if (not item) then return end
+    item.locations[chest .. "_Slot_" .. slot] = nil
+    saveItem(item, identifier)
+end --function
+
+function verifyItemLocations (identifier)
+    local item = loadItem(identifier)
+    if (not item) then return false end
+    for k,v in pairs(item.locations) do
+        actualItem = peripheral.wrap(v.chest).getItemMeta(v.slot)
+        if (actualItem == nil or (actualItem.rawName ~= identifier) or (actualItem.nbtHash ~= identifier)) then
+            item.locations[k] = nil
+            myLocationList[v.chest][v.slot] = "nil"
+            recordItemAt(v.chest, v.slot)
+        end --if
+    end --for
+    saveItem(item, identifier)
 end --function
 
 function getChestAndSlot(locationName)
@@ -91,28 +220,47 @@ function getFirstAvailableSpot(itemName)
         local size = c.size()
         for i = 1,size do
             local item = c.getItemMeta(i)
-            if (item.count < item.maxCount)
+            if (item.count < item.maxCount) then
+
+            end --if
         end --for
     end --for
 end --function
 
-function getNextAvailableSpot(startChestName, startSlot, itemName)
-    local found = (chestName == nil)
-    for k,chest in ipairs(myChestList) do
-        local i1 = 1
-        if (chestName == startChestName) then
-            i1 = startSlot + 1
-            found = true
+function getNextAvailableSpot(startChestName, startSlot, identifier)
+    if (not startSlot) then startSlot = 0 end
+    loadLocations()
+    local found = (startChestName == nil)
+    for name,slots in pairs(myLocationList) do
+        found = found or (name == startChestName)
+        if (found and name ~= mySettings.RetrievalChest) then
+            local chest, slot = getNextAvailableSpotIn(name, startSlot, identifier)
+            if (chest and slot) then
+                return chest, slot
+            end --if
+            startSlot = 0
         end --if
-        if (found) then
-            local c = peripheral.wrap(chest)
-            local size = c.size()
-            for i=i1, size do
-                local item = c.getItemMeta(i)
-                if (item.count < item.maxCount) then
+    end --for
+end --function
 
-                end --if
-            end --for
+function getNextAvailableSpotIn(chestName, startSlot, identifier)
+    if (not startSlot) then startSlot = 0 end
+    loadLocations()
+    local slots = myLocationList[chestName]
+    if (not slots or not slots.size) then
+        error("wtf "..textutils.serialize(slots))
+    end --if
+    for i=(startSlot + 1), slots.size do
+        local item = slots[i]
+        if (item == "nil") then
+            return chestName, i
+        end --if
+        if (item == identifier) then
+            itemMeta = loadItem(identifier)
+            count = itemMeta.locations[chestName.."_Slot_"..i].count
+            if (count < itemMeta.maxCount) then
+                return chestName, i
+            end --if
         end --if
     end --for
 end --function
@@ -125,12 +273,40 @@ function checkDump()
 
 end --function
 
-function dump(chest, slot)
-
+function dumpFrom(fChest, fSlot, count)
+    local tChest, tSlot = getNextAvailableSpot()
+    from = peripheral.wrap(fChest)
+    if (not from) then
+        error ("fromChest not a valid peripheral", 2)
+    end --if
+    if (not tChest or not tSlot) then
+        error ("getNextAvailableSpot() not returning valid results")
+    end --if
+    success = from.pushItems(tChest, fSlot, count, tSlot)
+    if (success) then
+        recordItemAt(fChest, fSlot)
+        recordItemAt(tChest, tSlot)
+    else
+        error("Item not retrieved")
+    end --if
+    return success
 end --function
 
-function retrieve(item, count, chest, slot)
-
+function dumpAll()
+    loadSettings()
+    c = mySettings.RetrievalChest
+    s = peripheral.call(c, 'size')
+    fail = false
+    for i=1,s do
+        ThorneAPI.LoadingScreen("Dumping Inventory", (i-1) * 3, s * 3)
+        if (not dumpFrom(c, i)) then
+            fail = true
+        end
+    end --for
+    if (fail) then
+        os.pullEvent("key")
+    end
+    refreshItemLines()
 end --function
 
 function resetItemLocations()
@@ -144,6 +320,9 @@ function resetItemLocations()
         f.write(textutils.serialize(info))
         f.close()
     end --for
+    for k,v in pairs(myLocationList) do
+        myLocationList[k] = nil
+    end --for
 end --function
 
 function resetChestList()
@@ -154,34 +333,296 @@ function resetChestList()
     local transferLocations = {}
     local allChests = {}
     local openChests = {}
-    if (mySettings.RetrievalChest ~= "") then
-        loc = peripheral.call(mySettings.RetrievalChest, "getTransferLocations")
+    local mainChest = peripheral.wrap(mySettings.RetrievalChest or "")
+    if (not myLocationList) then
+        myLocationList = {}
+    end --if
+    if (mainChest) then
+        local loc = mainChest.getTransferLocations()
         for k,v in ipairs(loc) do
             transferLocations[v] = true
         end --for
     end --if
     for k,v in ipairs(allPeripherals) do
-        if (peripheral.wrap(v)).getTransferLocations then
+        local c = peripheral.wrap(v)
+        if (c.getTransferLocations) then
             allChests[v] = true
-            if (transferLocations[v]) then
+            myLocationList[v] = {size=c.size()}
+            if (transferLocations[v] or not mainChest) then
                 table.insert(openChests, v)
             end --if
         end --if
     end --for
-    local f = fs.open(chestListPath, "w")
-    f.write(textutils.serialize(openChests))
-    f.close()
-    loadChests
+    ThorneAPI.SaveObject(openChests, chestListPath)
+    loadChests()
+end --function
+
+function chooseRetrievalChest ()
+    local peris = peripheral.getNames()
+    local chests = {}
+    local lines = {}
+    local scroll = 0
+    local selection = 1
+    local options = {
+        title = "Choose Which Chest To Retrieve Items From"
+    }
+    loadSettings()
+    for k,v in ipairs(peris) do
+        local p = peripheral.wrap(v)
+        if (p.getTransferLocations) then
+            table.insert(chests, v)
+            table.insert(lines, v .. "("..peripheral.getType(v)..")")
+            if (mySettings.RetrievalChest == v) then
+                selection = table.getn(chests)
+            end --if
+        end --if
+    end --for
+    term.clear()
+    selection = ThorneAPI.SimpleSelectionScreen(lines, selection, options)
+    local newSettings = {RetrievalChest = chests[selection]}
+    saveSettings(newSettings)
+    resetChestList()
+end --function
+
+function getDisplayLine(identifier)
+    local width, height = term.getSize()
+    item = loadItem(identifier)
+    local name = " " .. item.displayName
+    local count = "("..item.sCount.."/"..item.rCount..")"
+    if (string.len(name) < width - string.len(count)) then
+        name = name .. string.rep(" ", width - string.len(count) - string.len(name))
+    end --if
+    if (string.len(name) > width - string.len(count)) then
+        name = string.sub(name, 1, width - string.len(count) - 3) .. "..."
+    end --if
+    local line = name .. count
+    return line
+end --function
+
+function listItems ()
+    term.clear()
+    loadItemList()
+    displayedItemList = {}
+    displayedItemLines = {}
+    refreshItemLines()
+    local controls = {
+        key = {
+            [keys.s] = sortScreen,
+            [keys.i] = itemInfoScreen,
+            [keys.d] = dumpAll,
+            [keys.h] = helpScreen,
+            [keys.r] = refreshRetrievalChest,
+            [keys.up] = 'stepUp',
+            [keys.down] = 'stepDown',
+            [keys.enter] = itemInfoScreen,
+            [keys.backspace] = 'escape',
+            [keys.left] = dumpLine,
+            [keys.right] = retrieveLine,
+            [keys.leftShift] = ThorneKeys.shiftDown,
+            [keys.rightShift] = ThorneKeys.shiftDown,
+        },
+        key_up = {
+            [keys.leftShift] = ThorneKeys.shiftUp,
+            [keys.rightShift] = ThorneKeys.shiftUp,
+        }
+    }
+    local options = {
+        title = "Item List: "..table.getn(displayedItemList).." items available (stored/retrieved)",
+        footer = {"(D)ump (I)nfo (F)ind (S)ort (H)elp (R)efresh"},
+        before = 0,
+        after = 0,
+    }
+    ThorneAPI.ComplexSelectionScreen(displayedItemLines, 1, options, controls)
+    term.clear()
+    term.setCursorPos(1,1)
+end --function
+
+function itemInfoScreen(selected)
+    local item = loadItem(displayedItemList[selected])
+    local info = {}
+    local match = string.gmatch(textutils.serialize(item), "[^\r\n]+")
+    for l in match do
+        table.insert(info, l)
+    end --for
+    ThorneAPI.SimpleSelectionScreen(info)
+end --function
+
+function dumpLine(selection)
+    local item = loadItem(displayedItemList[selection])
+    for k,v in pairs(item.locations) do
+        if (v.chest == mySettings.RetrievalChest) then
+            if (dumpFrom(v.chest, v.slot, ThorneKeys.shiftHeld() and 64 or 1)) then
+                break
+            end --if
+        end --if
+    end --for
+    displayedItemLines[selection] = getDisplayLine(displayedItemList[selection])
+end --function
+
+function retrieveLine(selection)
+    retrieveItem(displayedItemList[selection], ThorneKeys.shiftHeld() and 64 or 1)
+    displayedItemLines[selection] = getDisplayLine(displayedItemList[selection])
+end --function
+
+function retrieveItem(identifier, count)
+    item = loadItem(identifier)
+    if (not item) then
+        error("valid identifier expected, got "..type(identifier).." "..identifier, 2)
+    end --if
+    if (not count) then count = 64 end
+    for k,v in pairs(item.locations) do
+        if (v.chest ~= mySettings.RetrievalChest) then
+            if (retrieveFrom(v.chest, v.slot, count)) then
+                break
+            end --if
+        end --if
+    end --for
+end --function
+
+function retrieveFrom(fChest, fSlot, count)
+    if (not count) then count = 64 end
+    local id = myLocationList[fChest][fSlot]
+    local tChest, tSlot = getNextAvailableSpotIn(mySettings.RetrievalChest, 0, id)
+    from = peripheral.wrap(fChest)
+    if (not from) then
+        error ("fromChest not a valid peripheral", 2)
+    end --if
+    if (not tChest or not tSlot) then
+        error ("getNextAvailableSpotIn() not returning valid results")
+    end --if
+    success = from.pushItems(tChest, fSlot, count, tSlot)
+    if (success) then
+        recordItemAt(fChest, fSlot)
+        recordItemAt(tChest, tSlot)
+    else
+        error("Item not retrieved")
+    end --if
+    return success
+end --function
+
+function refreshRetrievalChest()
+    loadLocations()
+    local size = myLocationList[mySettings.RetrievalChest].size
+    for i=1,size do
+        ThorneAPI.LoadingScreen("Rechecking Retrieval Chest", i, size)
+        recordItemAt(mySettings.RetrievalChest, i)
+    end --for
+    refreshItemLines()
+end --function
+
+function refreshItemLines()
+    loadItemList()
+    for k,v in pairs(displayedItemList) do
+        displayedItemList[k] = nil
+    end --for
+    for k,v in pairs(displayedItemLines) do
+        displayedItemLines[k] = nil
+    end --for
+    for k,v in ipairs(myItemList) do
+        table.insert(displayedItemList, v)
+    end --for
+    for k,v in ipairs(myDisplayFilters) do
+        filterBy(v)
+    end --for
+    sortBy(mySettings.SortBy)
+    for k,v in ipairs(displayedItemList) do
+        table.insert(displayedItemLines, getDisplayLine(v))
+    end --for
+end --function
+
+function helpScreen()
+
+end --function
+
+function sortScreen()
+    --TODO: Make choice screen for all the sorting methods.
+    --      It will call sortBy(key)
+    local lines = {
+        "Nevermind",
+        "Display Name",
+        "Id Name",
+        "Raw Name",
+        "OreDictionary",
+    }
+    local options = {
+        title = "Choose a field to sort by."
+    }
+    local selection = 1
+    selection = ThorneAPI.SimpleSelectionScreen(lines, selection, options)
+    saveSettings({SortBy=lines[selection]})
+    refreshItemLines()
+end --function
+
+function sortBy(key)
+    --TODO: Make sortBy function
+    --      It will mutate the actual myItemList table, the displayedItems table,
+    --      and the table that links displayedItems to the identifiers.
+    --table.sort(displayedItemList)
+    --
+    if (not key) then key = mySettings["SortBy"] end
+    saveSettings({SortBy=key})
+    sortFunctions = {
+        ["Display Name"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return string.lower(itemA.displayName) < string.lower(itemB.displayName)
+        end, -- function
+        ["Id Name"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return string.lower(itemA.name) < string.lower(itemB.name)
+        end, -- function
+        ["Raw Name"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return string.lower(itemA.rawName) < string.lower(itemB.rawName)
+        end, -- function
+        ["Identfier"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return string.lower(itemA.identifier) < string.lower(itemB.identifier)
+        end, -- function
+        ["OreDictionary"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return string.lower(itemA.meta.ores and itemA.ores[1] or "") < string.lower(itemB.ores and itemB.ores[1] or "")
+        end, -- function
+    }
+    if (not sortFunctions[key]) then
+        return false
+    end --if
+    ThorneAPI.LoadingScreen("Sorting Inventory List")
+    table.sort(displayedItemList, sortFunctions[key])
+end --function
+
+function filterBy(filter)
+    -- filter is {key, action, string}
+    --TODO: Make filterBy Function
+end --function
+
+function filterScreen()
+    --TODO: Make filterScreen
 end --function
 
 function recountEverything()
     resetItemLocations()
     resetChestList()
-    for k,chestName in ipairs(chestList) do
+    totalSlots = 0
+    currentSlots = 0
+    for k,chestName in ipairs(myChestList) do
+        local c = peripheral.wrap(chestName)
+        local size = c.size()
+        totalSlots = totalSlots + size
+    end --for
+    for k,chestName in ipairs(myChestList) do
         local c = peripheral.wrap(chestName)
         local size = c.size()
         for slot = 1,size do
+            ThorneAPI.LoadingScreen("Recording Inventory Slots", currentSlots, totalSlots)
             recordItemAt(chestName, slot)
+            currentSlots = currentSlots + 1
         end --for
     end --for
+    ThorneAPI.LoadingScreen("Recording Inventory Slots", currentSlots, totalSlots)
+    ThorneAPI.Alert()
 end --function
