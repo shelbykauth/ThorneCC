@@ -100,7 +100,7 @@ end --function
 function getIdentifier(item)
     ThorneAPI.CatchTypeError(item, "table", "#1", "Item Meta Object")
     local id = ""
-    if (nbtHash) then return nbtHash end
+    if (item.nbtHash) then return item.nbtHash end
     id = item.name
     if (item.damage) then
         id = id .. "_" .. item.damage
@@ -248,10 +248,10 @@ function getNextAvailableSpotIn(chestName, startSlot, identifier)
     end --if
     for i=(startSlot + 1), slots.size do
         local item = slots[i]
-        if (item == "nil") then
+        if (item == "nil" or item == nil) then
             return chestName, i
         end --if
-        if (item == identifier) then
+        if (identifier and item == identifier) then
             itemMeta = loadItem(identifier)
             count = itemMeta.locations[chestName.."_Slot_"..i].count
             if (count < itemMeta.maxCount) then
@@ -269,8 +269,9 @@ function checkDump()
 
 end --function
 
-function dumpFrom(fChest, fSlot, count)
-    local tChest, tSlot = getNextAvailableSpot()
+function dumpFrom(fChest, fSlot, count, identifier)
+    identifier = myLocationList[fChest][fSlot]
+    local tChest, tSlot = getNextAvailableSpot(nil, 0, identifier)
     from = peripheral.wrap(fChest)
     if (not from) then
         error ("fromChest not a valid peripheral", 2)
