@@ -14,6 +14,7 @@ local myLocationList = {}
 local myDisplayFilters = {}
 local myDisplaySort = ""
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
+os.loadAPI("/ThorneCC/apis/ThorneKeys.lua")
 
 
 function start ()
@@ -79,8 +80,8 @@ function loadLocations()
     if (myLocationList == nil) then
         myLocationList = {}
         for k,v in pairs(myChestList) do
-            myLocationList[v] = {}
             s = peripheral.call(v, "size")
+            myLocationList[v] = {size = s}
             for i=1,s do
                 myLocationList[v][i] = "nil"
             end --for
@@ -250,7 +251,7 @@ function checkDump()
 
 end --function
 
-function dumpFrom(fChest, fSlot)
+function dumpFrom(fChest, fSlot, count)
     local tChest, tSlot = getNextAvailableSpot()
     from = peripheral.wrap(fChest)
     if (not from) then
@@ -259,7 +260,7 @@ function dumpFrom(fChest, fSlot)
     if (not tChest or not tSlot) then
         error ("getNextAvailableSpot() not returning valid results")
     end --if
-    success = from.pushItems(tChest, fSlot, 64, tSlot)
+    success = from.pushItems(tChest, fSlot, count, tSlot)
     if (success) then
         recordItemAt(fChest, fSlot)
         recordItemAt(tChest, tSlot)
@@ -296,7 +297,7 @@ function resetItemLocations()
         f.close()
     end --for
     for k,v in pairs(myLocationList) do
-        myLocationList[k] = {}
+        myLocationList[k] = nil
     end --for
 end --function
 
@@ -313,15 +314,16 @@ function resetChestList()
         myLocationList = {}
     end --if
     if (mainChest) then
-        loc = mainChest.getTransferLocations()
+        local loc = mainChest.getTransferLocations()
         for k,v in ipairs(loc) do
             transferLocations[v] = true
         end --for
     end --if
     for k,v in ipairs(allPeripherals) do
-        if (peripheral.wrap(v)).getTransferLocations then
+        local c = peripheral.wrap(v)
+        if (c.getTransferLocations) then
             allChests[v] = true
-            myLocationList[v] = {}
+            myLocationList[v] = {size=c.size()}
             if (transferLocations[v] or not mainChest) then
                 table.insert(openChests, v)
             end --if
@@ -392,7 +394,13 @@ function listItems ()
             [keys.backspace] = 'escape',
             [keys.left] = dumpLine,
             [keys.right] = retrieveLine,
+            [keys.leftShift] = ThorneKeys.shiftDown,
+            [keys.rightShift] = ThorneKeys.shiftDown,
         },
+        key_up = {
+            [keys.leftShift] = ThorneKeys.shiftUp,
+            [keys.rightShift] = ThorneKeys.shiftUp,
+        }
     }
     local options = {
         title = "Item List: "..table.getn(displayedItemList).." items available (stored/retrieved)",
@@ -419,15 +427,17 @@ function dumpLine(selection)
     local item = loadItem(displayedItemList[selection])
     for k,v in pairs(item.locations) do
         if (v.chest == mySettings.RetrievalChest) then
-            dumpFrom(v.chest, v.slot)
+            if (dumpFrom(v.chest, v.slot, ThorneKeys.shiftHeld() and 64 or 1)) then
+                break
+            end --if
         end --if
     end --for
-    refreshItemLines()
+    displayedItemLines[selection] = getDisplayLine(displayedItemList[selection])
 end --function
 
 function retrieveLine(selection)
-    retrieveItem(displayedItemList[selection], 1)
-    refreshItemLines()
+    retrieveItem(displayedItemList[selection], ThorneKeys.shiftHeld() and 64 or 1)
+    displayedItemLines[selection] = getDisplayLine(displayedItemList[selection])
 end --function
 
 function retrieveItem(identifier, count)
@@ -438,11 +448,11 @@ function retrieveItem(identifier, count)
     if (not count) then count = 64 end
     for k,v in pairs(item.locations) do
         if (v.chest ~= mySettings.RetrievalChest) then
-            retrieveFrom(v.chest, v.slot, count)
-            break
+            if (retrieveFrom(v.chest, v.slot, count)) then
+                break
+            end --if
         end --if
     end --for
-    refreshItemLines()
 end --function
 
 function retrieveFrom(fChest, fSlot, count)
