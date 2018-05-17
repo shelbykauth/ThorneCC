@@ -305,9 +305,9 @@ end --function
 function CatchTypeError(var, exType, argId, exVar)
     if (type(exType) ~= 'string') then exType = type(exType) end
     if (exVar == nil) then exVar = "" end
-    if (argId == nil) then argId = "" end
-    local expected = exVar.."("..exType..")"
-    local actual = var.."("..type(var)..")"
+    if (type(argId) ~= 'string') then argId = tostring(argId) end
+    local expected = tostring(exVar).."("..exType..")"
+    local actual = tostring(var).."("..type(var)..")"
     if (type(var) ~= exType) then
         error("bad argument "..argId..", expected "..expected..", got "..actual, 3)
     end
