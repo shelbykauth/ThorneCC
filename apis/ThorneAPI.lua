@@ -300,4 +300,15 @@ function Hash(str)
     end
 
     return string.sub(p, 1, p:len() - 1)
-end
+end --function
+
+function CatchTypeError(var, exType, argId, exVar)
+    if (type(exType) ~= 'string') then exType = type(exType) end
+    if (exVar == nil) then exVar = "" end
+    if (argId == nil) then argId = "" end
+    local expected = exVar.."("..exType..")"
+    local actual = var.."("..type(var)..")"
+    if (type(var) ~= exType) then
+        error("bad argument "..argId..", expected "..expected..", got "..actual, 3)
+    end
+end --function

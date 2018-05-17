@@ -6,8 +6,8 @@ local itemListPath = dataPath.."itemList.dat"
 local locationListPath = dataPath.."locationList.dat"
 local mySettings = {}
 local myChestList = {}
-local myItemList = {} -- complete array of all rawNames
-local displayedItemList = {} -- partial array of displayed items, as rawNames
+local myItemList = {} -- complete array of all identifiers
+local displayedItemList = {} -- partial array of displayed items, as identifiers
 local displayedItemLines = {} -- partial array of displayed items, as formatted lines
 local availableChests = {}
 local myLocationList = {}
@@ -97,9 +97,20 @@ function saveSettings(newSettings)
     ThorneAPI.SaveObject(mySettings, settingsPath)
 end --function
 
-function loadItem (rawName)
-    if (not rawName) then return false end
-    local item = ThorneAPI.LoadObject(stockPath .. rawName .. ".dat", nil, false)
+function getIdentifier(item)
+    ThorneAPI.CatchTypeError(item, "table", "#1", "Item Meta Object")
+    local id = ""
+    if (nbtHash) then return nbtHash end
+    id = item.name
+    if (item.damage) then
+        id = id .. "_" .. item.damage
+    end --if
+    return id
+end --function
+
+function loadItem (identifier)
+    if (not identifier) then return false end
+    local item = ThorneAPI.LoadObject(stockPath .. identifier .. ".dat", nil, false)
     if (item == nil) then return nil end
     local rCount = 0
     local sCount = 0
@@ -116,9 +127,7 @@ function loadItem (rawName)
 end --function
 
 function saveItem (item, identifier)
-    if (item == nil) then
-        error("expecting itemMeta object, argument 1", 2)
-    end --if
+    ThorneAPI.CatchTypeError(item, "table", "#1", "Item Meta Object")
     if (identifier == nil) then
         identifier = item.nbtHash or item.rawName
     end --if
@@ -218,27 +227,40 @@ function getFirstAvailableSpot(itemName)
     end --for
 end --function
 
-function getNextAvailableSpot(startChestName, startSlot, itemName)
+function getNextAvailableSpot(startChestName, startSlot, identifier)
+    if (not startSlot) then startSlot = 0 end
     loadLocations()
-    found = (startChestName == nil)
+    local found = (startChestName == nil)
     for name,slots in pairs(myLocationList) do
         found = found or (name == startChestName)
-        for slot,item in ipairs(slots) do
-            if (found and item == "nil" and name ~= mySettings.RetrievalChest) then
-                return name, slot
+        if (found and name ~= mySettings.RetrievalChest) then
+            local chest, slot = getNextAvailableSpotIn(name, startSlot, identifier)
+            if (chest and slot) then
+                return chest, slot
             end --if
-            if ((startChestName == name and slot == startSlot)) then
-                found = true
-            end --if
-        end --for
+            startSlot = 0
+        end --if
     end --for
 end --function
 
 function getNextAvailableSpotIn(chestName, startSlot, identifier)
+    if (not startSlot) then startSlot = 0 end
     loadLocations()
-    for slot,item in ipairs(myLocationList[chestName]) do
+    local slots = myLocationList[chestName]
+    if (not slots or not slots.size) then
+        error("wtf "..textutils.serialize(slots))
+    end --if
+    for i=(startSlot + 1), slots.size do
+        local item = slots[i]
         if (item == "nil") then
-            return chestName, slot
+            return chestName, i
+        end --if
+        if (item == identifier) then
+            itemMeta = loadItem(identifier)
+            count = itemMeta.locations[chestName.."_Slot_"..i].count
+            if (count < itemMeta.maxCount) then
+                return chestName, i
+            end --if
         end --if
     end --for
 end --function
@@ -264,6 +286,8 @@ function dumpFrom(fChest, fSlot, count)
     if (success) then
         recordItemAt(fChest, fSlot)
         recordItemAt(tChest, tSlot)
+    else
+        error("Item not retrieved")
     end --if
     return success
 end --function
@@ -443,7 +467,7 @@ end --function
 function retrieveItem(identifier, count)
     item = loadItem(identifier)
     if (not item) then
-        error("valid identifier expected, got "..type(identifier).." "..identifer, 2)
+        error("valid identifier expected, got "..type(identifier).." "..identifier, 2)
     end --if
     if (not count) then count = 64 end
     for k,v in pairs(item.locations) do
@@ -457,25 +481,28 @@ end --function
 
 function retrieveFrom(fChest, fSlot, count)
     if (not count) then count = 64 end
-    local tChest, tSlot = getNextAvailableSpotIn(mySettings.RetrievalChest)
+    local id = myLocationList[fChest][fSlot]
+    local tChest, tSlot = getNextAvailableSpotIn(mySettings.RetrievalChest, 0, id)
     from = peripheral.wrap(fChest)
     if (not from) then
         error ("fromChest not a valid peripheral", 2)
     end --if
     if (not tChest or not tSlot) then
-        error ("getNextAvailableSpot() not returning valid results")
+        error ("getNextAvailableSpotIn() not returning valid results")
     end --if
     success = from.pushItems(tChest, fSlot, count, tSlot)
     if (success) then
         recordItemAt(fChest, fSlot)
         recordItemAt(tChest, tSlot)
+    else
+        error("Item not retrieved")
     end --if
     return success
 end --function
 
 function refreshRetrievalChest()
     loadLocations()
-    local size = table.getn(myLocationList[mySettings.RetrievalChest])
+    local size = myLocationList[mySettings.RetrievalChest].size
     for i=1,size do
         ThorneAPI.LoadingScreen("Rechecking Retrieval Chest", i, size)
         recordItemAt(mySettings.RetrievalChest, i)
@@ -529,7 +556,7 @@ end --function
 function sortBy(key)
     --TODO: Make sortBy function
     --      It will mutate the actual myItemList table, the displayedItems table,
-    --      and the table that links displayedItems to the rawNames.
+    --      and the table that links displayedItems to the identifiers.
     --table.sort(displayedItemList)
     --
     if (not key) then key = mySettings["SortBy"] end
@@ -549,6 +576,11 @@ function sortBy(key)
             local itemA = loadItem(a)
             local itemB = loadItem(b)
             return string.lower(itemA.rawName) < string.lower(itemB.rawName)
+        end, -- function
+        ["Identfier"] = function(a, b)
+            local itemA = loadItem(a)
+            local itemB = loadItem(b)
+            return string.lower(itemA.identifier) < string.lower(itemB.identifier)
         end, -- function
         ["OreDictionary"] = function(a, b)
             local itemA = loadItem(a)
