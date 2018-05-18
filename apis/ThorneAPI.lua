@@ -187,9 +187,9 @@ function ComplexSelectionScreen(lines, selected, options, controls)
         if (type(action) == 'function') then action(selected) end
         if (type(action) == 'string') then
             if action == 'stepUp' then
-                selected = selected - 1
+                selected = selected - (ThorneKeys.shiftHeld() and displayHeight or 1)
             elseif action == 'stepDown' then
-                selected = selected + 1
+                selected = selected + (ThorneKeys.shiftHeld() and displayHeight or 1)
             elseif action == 'escape' then
                 selected = oSelected
                 ended = true
