@@ -13,6 +13,49 @@ local availableChests = {}
 local myLocationList = {}
 local myDisplayFilters = {}
 local myDisplaySort = ""
+local sortFunctions = {
+    ["     No Sort     "] = false,
+    ["   Display Name  "] = function(a,b)
+        itemA = loadItem(a)
+        itemB = loadItem(b)
+        return string.lower(itemA.displayName) < string.lower(itemB.displayName)
+    end, -- function
+    ["     NBT Hash    "] = function(a,b)
+        itemA = loadItem(a)
+        itemB = loadItem(b)
+        return string.lower(itemA.nbtHash) < string.lower(itemB.nbtHash)
+    end, -- function
+    ["      Mod ID     "] = function(a,b)
+        itemA = loadItem(a)
+        itemB = loadItem(b)
+        return string.lower(itemA.name) < string.lower(itemB.name)
+    end, -- function
+    ["     Raw Name    "] = function(a,b)
+        itemA = loadItem(a)
+        itemB = loadItem(b)
+        return string.lower(itemA.rawName) < string.lower(itemB.rawName)
+    end, -- function
+    ["      Damage     "] = function(a,b)
+        itemA = loadItem(a)
+        itemB = loadItem(b)
+        return itemA.meta.damage < itemB.meta.damage
+    end, -- function,
+    ["   Total Count   "] = function(a,b)
+        itemA = loadItem(a)
+        itemB = loadItem(b)
+        return (itemA.rCount + itemA.sCount) < (itemB.rCount + itemB.sCount)
+    end, -- function
+    [" Retrieved Count "] = function(a,b)
+        itemA = loadItem(a)
+        itemB = loadItem(b)
+        return itemA.rCount < itemB.rCount
+    end, -- function
+    ["   Stored Count  "] = function(a,b)
+        itemA = loadItem(a)
+        itemB = loadItem(b)
+        return itemA.sCount < itemB.sCount
+    end, -- function
+}
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
 os.loadAPI("/ThorneCC/apis/ThorneKeys.lua")
 
@@ -534,13 +577,10 @@ end --function
 function sortScreen()
     --TODO: Make choice screen for all the sorting methods.
     --      It will call sortBy(key)
-    local lines = {
-        "Nevermind",
-        "Display Name",
-        "Id Name",
-        "Raw Name",
-        "OreDictionary",
-    }
+    local lines = {}
+    for k,v in pairs(sortFunctions) do
+        table.insert(lines, k)
+    end --for
     local options = {
         title = "Choose a field to sort by.",
         center = true,
@@ -559,33 +599,6 @@ function sortBy(key)
     --
     if (not key) then key = mySettings["SortBy"] end
     saveSettings({SortBy=key})
-    sortFunctions = {
-        ["Display Name"] = function(a, b)
-            local itemA = loadItem(a)
-            local itemB = loadItem(b)
-            return string.lower(itemA.displayName) < string.lower(itemB.displayName)
-        end, -- function
-        ["Id Name"] = function(a, b)
-            local itemA = loadItem(a)
-            local itemB = loadItem(b)
-            return string.lower(itemA.name) < string.lower(itemB.name)
-        end, -- function
-        ["Raw Name"] = function(a, b)
-            local itemA = loadItem(a)
-            local itemB = loadItem(b)
-            return string.lower(itemA.rawName) < string.lower(itemB.rawName)
-        end, -- function
-        ["Identfier"] = function(a, b)
-            local itemA = loadItem(a)
-            local itemB = loadItem(b)
-            return string.lower(itemA.identifier) < string.lower(itemB.identifier)
-        end, -- function
-        ["OreDictionary"] = function(a, b)
-            local itemA = loadItem(a)
-            local itemB = loadItem(b)
-            return string.lower(itemA.meta.ores and itemA.ores[1] or "") < string.lower(itemB.ores and itemB.ores[1] or "")
-        end, -- function
-    }
     if (not sortFunctions[key]) then
         return false
     end --if
