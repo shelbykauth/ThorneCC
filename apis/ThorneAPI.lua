@@ -37,7 +37,7 @@ function Display (lines, scroll, highlight, options)
                 term.setBackgroundColor(colors.white)
                 term.setTextColor(colors.black)
                 if (options.center) then
-                    CenterPrint(lines[l], i)
+                    CenterPrint(lines[l], i, true)
                 else
                     term.write(lines[l])
                 end --if
@@ -45,7 +45,7 @@ function Display (lines, scroll, highlight, options)
                 term.setTextColor(colors.white)
             else
                 if (options.center) then
-                    CenterPrint(lines[l], i)
+                    CenterPrint(lines[l], i, false)
                 else
                     term.write(lines[l])
                 end --if
@@ -66,7 +66,7 @@ function LoadingScreen(text, currentCount, finalCount)
     CenterPrint({text, divider, progress})
 end --function
 
-function CenterPrint(lines, y)
+function CenterPrint(lines, y, noClear)
     local width,height = term.getSize()
     if (type(lines) == 'string') then lines = {lines} end
     for i = 1, table.getn(lines) do
@@ -104,11 +104,12 @@ function CenterPrint(lines, y)
     for k,v in ipairs(lines) do
         local x = width / 2 - string.len(v) / 2 + 1
         term.setCursorPos(x, y)
-        term.clearLine()
+        if (not noClear) then
+            term.clearLine()
+        end --if
         term.write(v)
         y = y + 1
     end --for
-
 end --function
 
 function LookAtObject(obj)
