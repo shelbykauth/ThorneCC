@@ -542,7 +542,8 @@ function sortScreen()
         "OreDictionary",
     }
     local options = {
-        title = "Choose a field to sort by."
+        title = "Choose a field to sort by.",
+        center = true,
     }
     local selection = 1
     selection = ThorneAPI.SimpleSelectionScreen(lines, selection, options)
