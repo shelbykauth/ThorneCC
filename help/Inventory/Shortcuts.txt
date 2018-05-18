@@ -1,0 +1,17 @@
+Hi there!  Welcome to the Thorne Inventory System!
+
+When you're off this screen, here are some helpful keyboard shortcuts:
+S: Sort
+F: Find/Filter
+M: Menu (this opens up the other options)
+H: Help
+D: Dump everything into from the retrieval chest into storage.
+R: Recount the retrieval chest
+Shift-R: Recount the entire inventory (this may take a few minutes, depending on the size of your structure)
+Arrow keys: Move the selected item.
+ - Left: Put one of the into storage.
+ - Right: Take one item out of storage.
+ - Shift-Left: Store everything from one slot.
+ - Shift-Right: Retrieve up to one stack.
+I: View Item Info
+Enter: View Item Info

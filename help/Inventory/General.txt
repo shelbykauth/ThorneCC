@@ -1,0 +1,12 @@
+Hi there!  Welcome to the Thorne Inventory System!
+
+Navigation:
+  Use up and down arrow keys to scroll.
+  Left and right while on the item list will push
+    and pull items into and out of storage.
+  Backspace should always take you back a screen.
+  Enter will usually select the currently
+    highlighted option.
+
+General:
+  

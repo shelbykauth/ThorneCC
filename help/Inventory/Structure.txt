@@ -1,0 +1,63 @@
+The physical structure for the inventory system
+can be a little confusing. So I made this guide.
+
+First of all, you need to make sure that you have
+ at least one ComputerCraft Peripheral addon
+ installed.  This will enable computers to connect
+ to inventories, beyond the "turtle.suck()" method.
+ I'm using Plethora Peripherals and
+ Peripherals Plus One. Plethora is the recommended.
+Secondly, you need a way to connect modems to
+ chests. I'm using a combination of CC:Tweaked's
+ full-block modems, which can connect to partial
+ blocks like vanilla chests, and Extra Utilities'
+ "Slightly Larger Chest", which is a full block and
+ can take a modem. However, any combination you
+ find is good. Fair warning, crates (the ones that
+ randomize the inventory each time) will likely
+ break the system.
+If you're using the Kauth Server modpack, then this
+ mod combination will be taken care of for you.
+
+My inventory system is in layers, and looks a bit
+ like this, (from the top-down)
+  C = vanilla chest        CC CC CC CC CC
+  L = xu2 chest            LMLLMLLMLLMLLML
+  M = full-block modem     CC CC CC CC CC
+ This is scalable in all three directions (with
+ walking space in between sets of these). The
+ cables run along the top, above the large chests
+ and I place half slabs above the top layer of
+ normal chests.  Chests that are not accessible
+ by hand are not accessible by the system.
+
+The general rule you want to follow is one modem
+ per chest, as many chests per modem and chests per
+ space as you can get. And vanilla can't be next to
+ each other. If you have multiple modems per chest
+ the numbers will be off because it will count the
+ stock twice. And it will try to pull stock that
+ doesn't exist, and it will error when you try to
+ push stock in.
+
+Also! You want to make sure that the store room is
+ sufficiently private and hard to reach, so that
+ people don't accidentally find it and move stuff.
+ If stuff is moved in the inventory, bugs will
+ occur until you Recount the entire inventory,
+ which takes several minutes. For the sake of not
+ being super slow, this inventory system cannot
+ check the veracity of the information until you
+ push or pull items to a slot that is mislabeled.
+
+The entire system should be connected by one
+ network. If the cabling is split, then some chests
+ will be hidden from the retrieval chest.
+
+The retrieval chest should be placed next to the
+ computer. But this is only for simplicity, as I
+ have yet to figure out how to make the retrieval
+ chest auto-select. It must be connected by modem
+ to the network, like the rest. This will, however,
+ make it easier to switch between the inventory
+ interface and picking up the items from the chest.
