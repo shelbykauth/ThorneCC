@@ -25,6 +25,7 @@ function Display (lines, scroll, highlight, options)
         options = {
             before = 0,
             after = 0,
+            center = false,
         }
     end --if
     for i=options.before + 1,height-options.after do
@@ -35,11 +36,19 @@ function Display (lines, scroll, highlight, options)
             if (highlight == l) then
                 term.setBackgroundColor(colors.white)
                 term.setTextColor(colors.black)
-                term.write(lines[l])
+                if (options.center) then
+                    CenterPrint(lines[l], i)
+                else
+                    term.write(lines[l])
+                end --if
                 term.setBackgroundColor(colors.black)
                 term.setTextColor(colors.white)
             else
-                term.write(lines[l])
+                if (options.center) then
+                    CenterPrint(lines[l], i)
+                else
+                    term.write(lines[l])
+                end --if
             end --if
         end --if
     end --for
