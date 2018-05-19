@@ -14,38 +14,38 @@ local myLocationList = {}
 local myDisplayFilters = {}
 local myDisplaySort = ""
 local sortFunctions = {
-    ["     No Sort     "] = false,
-    ["   Display Name  "] = function(a,b)
+    ["No Sort"] = false,
+    ["Display Name"] = function(a,b)
         itemA = loadItem(a)
         itemB = loadItem(b)
         return string.lower(itemA.displayName) < string.lower(itemB.displayName)
     end, -- function
-    ["     NBT Hash    "] = function(a,b)
+    ["NBT Hash"] = function(a,b)
         itemA = loadItem(a)
         itemB = loadItem(b)
         return (itemA.nbtHash or "") < (itemB.nbtHash or "")
     end, -- function
-    ["      Mod ID     "] = function(a,b)
+    ["Mod ID"] = function(a,b)
         itemA = loadItem(a)
         itemB = loadItem(b)
         return string.lower(itemA.name) < string.lower(itemB.name)
     end, -- function
-    ["     Raw Name    "] = function(a,b)
+    ["Raw Name"] = function(a,b)
         itemA = loadItem(a)
         itemB = loadItem(b)
         return string.lower(itemA.rawName) < string.lower(itemB.rawName)
     end, -- function
-    ["      Damage     "] = function(a,b)
+    ["Damage"] = function(a,b)
         itemA = loadItem(a)
         itemB = loadItem(b)
         return itemA.meta.damage < itemB.meta.damage
     end, -- function,
-    ["   Total Count   "] = function(a,b)
+    ["Total Count"] = function(a,b)
         itemA = loadItem(a)
         itemB = loadItem(b)
         return (itemA.rCount + itemA.sCount) < (itemB.rCount + itemB.sCount)
     end, -- function
-    [" Retrieved Count "] = function(a,b)
+    ["Retrieved Count"] = function(a,b)
         itemA = loadItem(a)
         itemB = loadItem(b)
         return itemA.rCount < itemB.rCount
@@ -577,10 +577,16 @@ end --function
 function sortScreen()
     --TODO: Make choice screen for all the sorting methods.
     --      It will call sortBy(key)
-    local lines = {}
-    for k,v in pairs(sortFunctions) do
-        table.insert(lines, k)
-    end --for
+    local lines = {
+        "No Sort",
+        "Display Name",
+        "Raw Name",
+        "Mod ID",
+        "Damage",
+        "Total Count",
+        "Retrieved Count",
+        "Stored Count",
+    }
     local options = {
         title = "Choose a field to sort by.",
         center = true,
