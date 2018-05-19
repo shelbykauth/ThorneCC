@@ -191,8 +191,7 @@ function ComplexSelectionScreen(lines, selected, options, controls)
             elseif action == 'stepDown' then
                 selected = selected + (ThorneKeys.shiftHeld() and displayHeight or 1)
             elseif action == 'escape' then
-                selected = oSelected
-                ended = true
+                return false
             elseif action == 'enter' then
                 ended = true
             else
@@ -201,6 +200,33 @@ function ComplexSelectionScreen(lines, selected, options, controls)
         end --if
     until ended
     return selected
+end --function
+
+function MenuTree(tree)
+    -- tree should be a tree with all leaves being functions (except for title leaves).
+    -- Try not to make circular trees, please.
+    if (type(tree) == "function") then
+        tree()
+        return
+    end --if
+    CatchTypeError(tree, 'table', '#1', 'tree')
+    local lines = {}
+    local options = {
+        center = true,
+        footer = 'Backspace to go back.  Enter to select.'
+    }
+    for k,v in pairs(tree) do
+        if (k == 'title') then
+            options.title = v
+        else
+            table.insert(lines, k)
+        end --if
+    end --for
+
+    local selected = SimpleSelectionScreen(lines, 1, {})
+    if (selected) then
+        menuTree (tree[lines[selected]])
+    end --if
 end --function
 
 function followTree(path, tree, findingType)
