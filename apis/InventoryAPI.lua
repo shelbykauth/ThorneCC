@@ -23,7 +23,7 @@ local sortFunctions = {
     ["     NBT Hash    "] = function(a,b)
         itemA = loadItem(a)
         itemB = loadItem(b)
-        return string.lower(itemA.nbtHash) < string.lower(itemB.nbtHash)
+        return (itemA.nbtHash or "") < (itemB.nbtHash or "")
     end, -- function
     ["      Mod ID     "] = function(a,b)
         itemA = loadItem(a)
