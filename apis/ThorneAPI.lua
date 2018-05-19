@@ -37,7 +37,7 @@ function Display (lines, scroll, highlight, options)
                 term.setBackgroundColor(colors.white)
                 term.setTextColor(colors.black)
                 if (options.center) then
-                    CenterPrint(lines[l], i, true)
+                    CenterPrint(lines[l], i)
                 else
                     term.write(lines[l])
                 end --if
@@ -45,7 +45,7 @@ function Display (lines, scroll, highlight, options)
                 term.setTextColor(colors.white)
             else
                 if (options.center) then
-                    CenterPrint(lines[l], i, false)
+                    CenterPrint(lines[l], i)
                 else
                     term.write(lines[l])
                 end --if
