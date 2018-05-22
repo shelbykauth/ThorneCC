@@ -7,6 +7,7 @@ local locationListPath = dataPath.."locationList.dat"
 local mySettings = {}
 local myChestList = {}
 local myItemList = {} -- complete array of all identifiers
+local loadedItems = {}
 local displayedItemList = {} -- partial array of displayed items, as identifiers
 local displayedItemLines = {} -- partial array of displayed items, as formatted lines
 local availableChests = {}
@@ -153,6 +154,9 @@ end --function
 
 function loadItem (identifier)
     if (not identifier) then return false end
+    if (loadedItems[identifier]) then
+        return loadedItems[identifier]
+    end --if
     local item = ThorneAPI.LoadObject(stockPath .. identifier .. ".dat", nil, false)
     if (item == nil) then return nil end
     local rCount = 0
@@ -166,6 +170,7 @@ function loadItem (identifier)
     end --for
     item.rCount = rCount
     item.sCount = sCount
+    loadedItems[identifier] = item
     return item
 end --function
 
