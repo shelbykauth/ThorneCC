@@ -154,11 +154,13 @@ end --function
 
 function loadItem (identifier)
     if (not identifier) then return false end
+    local item = nil
     if (loadedItems[identifier]) then
-        return loadedItems[identifier]
+        item = loadedItems[identifier]
+    else
+        item = ThorneAPI.LoadObject(stockPath .. identifier .. ".dat", nil, false)
+        if (item == nil) then return nil end
     end --if
-    local item = ThorneAPI.LoadObject(stockPath .. identifier .. ".dat", nil, false)
-    if (item == nil) then return nil end
     local rCount = 0
     local sCount = 0
     for k,v in pairs(item.locations) do
@@ -180,6 +182,7 @@ function saveItem (item, identifier)
         identifier = getIdentifier(item)
     end --if
     ThorneAPI.SaveObject(item, stockPath .. identifier .. ".dat")
+    loadedItems[identifier] = item
 end --function
 
 function recordItemAt (chestName, slot)
