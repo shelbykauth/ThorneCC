@@ -84,7 +84,7 @@ function reset (andRestart)
     fs.delete(dataPath)
     fs.makeDir(dataPath)
     fs.makeDir(stockPath)
-    if (andRestart) then start() end
+    start()
 end --function
 
 function loadSettings ()
@@ -460,6 +460,7 @@ function listItems ()
             [keys.d] = dumpAll,
             [keys.h] = helpScreen,
             [keys.r] = refreshRetrievalChest,
+            [keys.m] = menuScreen,
             [keys.up] = 'stepUp',
             [keys.down] = 'stepDown',
             [keys.enter] = itemInfoScreen,
@@ -497,6 +498,7 @@ end --function
 
 function dumpLine(selection)
     local item = loadItem(displayedItemList[selection])
+    if (not item) then CatchTypeError(item, "table", "loadItem(#1)", "itemMeta") end
     for k,v in pairs(item.locations) do
         if (v.chest == mySettings.RetrievalChest) then
             if (dumpFrom(v.chest, v.slot, ThorneKeys.shiftHeld() and 64 or 1)) then
@@ -582,6 +584,29 @@ function helpScreen()
 
 end --function
 
+function menuScreen()
+    local tree = {
+        Settings = {
+            ["Change Retrieval Chest"] = chooseRetrievalChest,
+        },
+        Help = {
+            ["General"] = {
+
+            },
+            ["Shortcuts"] = {
+
+            },
+            ["Structure"] = {
+
+            }
+        },
+        ["Reset Inventory"] = reset,
+        ["Recount Everything (Slow Process)"] = recountEverything,
+        ["Refresh Top Inventory"] = refreshRetrievalChest,
+    }
+    ThorneAPI.MenuTree(tree)
+end--function
+
 function sortScreen()
     --TODO: Make choice screen for all the sorting methods.
     --      It will call sortBy(key)
@@ -649,5 +674,6 @@ function recountEverything()
         end --for
     end --for
     ThorneAPI.LoadingScreen("Recording Inventory Slots", currentSlots, totalSlots)
+    start()
     ThorneAPI.Alert()
 end --function
