@@ -202,7 +202,7 @@ function ComplexSelectionScreen(lines, selected, options, controls)
     return selected
 end --function
 
-function MenuTree(tree)
+function MenuTree(tree, title)
     -- tree should be a tree with all leaves being functions (except for title leaves).
     -- Try not to make circular trees, please.
     if (type(tree) == "function") then
@@ -213,7 +213,8 @@ function MenuTree(tree)
     local lines = {}
     local options = {
         center = true,
-        footer = 'Backspace to go back.  Enter to select.'
+        footer = 'Backspace to go back.  Enter to select.',
+        title = title or "Menu",
     }
     for k,v in pairs(tree) do
         if (k == 'title') then
@@ -223,10 +224,12 @@ function MenuTree(tree)
         end --if
     end --for
 
-    local selected = SimpleSelectionScreen(lines, 1, {})
-    if (selected) then
-        menuTree (tree[lines[selected]])
-    end --if
+    repeat
+        local selected = SimpleSelectionScreen(lines, 1, {})
+        if (selected) then
+            MenuTree (tree[lines[selected]])
+        end --if
+    until selected == false
 end --function
 
 function followTree(path, tree, findingType)
