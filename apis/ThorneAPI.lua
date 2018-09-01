@@ -15,8 +15,24 @@ function Display (lines, scroll, highlight, options)
     if (type(lines) ~= 'table') then
         return false
     end --if
-    if (type(highlight) ~= 'number') then
-        highlight = -1
+    -- Edited 2018/08/31 to allow multi-highlighting
+    if (type(highlight) ~= 'table') then
+        -- convert 4 to {nil, nil, nil, true}
+        highlight = {[highlight]=true}
+    else
+        -- convert {3,5,2} to {nil, true, true, nil, true}
+        local newTable = {}
+        for k,v in pairs(highlight) do
+            newTable[k] = v
+        end --for
+        for k,v in pairs(highlight) do
+            if (type(v) == 'boolean' or not v) then
+                newTable[k] = v
+            else
+                newTable[v] = true
+            end --if
+        end --for
+        highlight = newTable
     end --if
     if (type(scroll) ~= 'number') then
         scroll = 1
@@ -33,7 +49,7 @@ function Display (lines, scroll, highlight, options)
         term.setCursorPos(1,i)
         term.clearLine()
         if (lines[l] ~= nil) then
-            if (highlight == l) then
+            if (highlight[l]) then
                 term.setBackgroundColor(colors.white)
                 term.setTextColor(colors.black)
                 if (options.center) then
