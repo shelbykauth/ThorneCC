@@ -1,0 +1,11 @@
+{
+    invalidTypes={
+        "bibliocraft.*",
+    },
+    defaultTags={
+        bulk={
+            "storagedrawers:controller",
+            "minecraft:chest",
+        }
+    }
+}
