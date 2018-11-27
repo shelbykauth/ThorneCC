@@ -220,8 +220,8 @@ end --func
 
 function runSetup(full)
     if (full) then
-        if (config.audioOut:find("peripheral/speaker/CCTweaked/")) then
-            local options = config.audioOut:gsub("peripheral/speaker/CCTweaked/", "")
+        if (config.audioOut:find("CCTweakedSpeaker")) then
+            local options = config.audioOut:gsub("CCTweakedSpeaker/", "")
             config.speakers = {}
             local names = peripheral.getNames()
             for k,name in pairs(names) do
@@ -248,11 +248,11 @@ config = ThorneAPI.LoadObject("/ThorneCC/config/music", {
     minPitch = 0,
     maxPitch = 24,
     volume = 1,
-    audioOut = "peripheral/speaker/CCTweaked/all",
+    audioOut = "CCTweakedSpeaker/all",
     audioOutOptions = {
-        "peripheral/speaker/CCTweaked/first",
-        "peripheral/speaker/CCTweaked/all",
-        "peripheral/speaker/CCTweaked/name/",
+        "CCTweakedSpeaker/first",
+        "CCTweakedSpeaker/all",
+        "CCTweakedSpeaker/name/",
     },
     notation = {
         notes = "0123456789abcdefghijklmno",
