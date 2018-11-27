@@ -1,0 +1,18 @@
+#REST
+_
+#DELIM
+ ,
+#NOTES
+0123456789abcdefghijklmno
+# G | A | B C | D | E F | G | A | B C | D | E F |
+# only edit below this line
+#TITLE
+Hot Cross Buns
+#TEMPO
+60
+#TRACKS
+       |________|________|________|________|
+Bass   |8_8_8___|__8_8___|____8___|8_8_8___|
+Bass   |d_c_d___|__c_d___|____c___|d_c_d___|
+Bass   |h_f_h___|__f_h___|____f___|h_f_h___|
+Chimes |h_f_d___|h_f_d___|ddddffff|h_f_d___|
