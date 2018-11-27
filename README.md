@@ -69,7 +69,7 @@ A small collection of useful programs and apis.
 ## BenchmarkAPI
 + BenchmarkFunction(func, argsList, count)
   - Benchmarks a function passed in with parameters
-  - argsList is a multidimensional array, {p1List, p2List, p3List, ...}, for all the combinations of arguments.  Use same-factored numbers of arguments for making them match up. {{1,2,3,4}, {1,2}}  Use different-factored numbers of arguments for mixing them up. {{1,2,3,4},{1,2,3,4,5}}
+  - argsList is a multidimensional array, {p1List, p2List, p3List, ...}, for all the combinations of arguments.
   - count defaults to 1000
 + BenchmarkProgram(path, argsList, count)
   - Benchmarks a program (found by absolute path) with arguments.
