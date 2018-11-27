@@ -63,9 +63,37 @@ function getLocationDetails(chestName)
     return ChestList[chestName]
 end --func
 
+function SetItemLocation(item, chestName, slot)
+    ChestList[chestName][slot] = {
+        name=item.name,
+        damage=item.damage,
+        nbtHash=item.nbtHash,
+        count=item.count,
+    }
+    ItemList[item.name] = ItemList[item.name] or item
+    local locations = ItemList[item.name].locations or {}
+    local locale = item.nbtHash or "default"
+        
+    ItemList[item.name].locations = locations
+end --func
+
+function RecordItemAt(chestName, slot)
+
+end --func
+
 function Recount(locationFilter, newDetails)
-    for chestName,chest in pairs(chestList) do
+    for chestName,chest in pairs(ChestList) do
+        local oldItems = {}
+        for i,item in pairs(chest.items) do
+            oldItems[item.name] = true
+        end --for
         local items = peripheral.call(chestName, "list")
+        chest.items = items
+        for i,item in pairs(items) do
+            thisItem = ItemList[item.name] or {
+                name=item.name
+            }
+        end --for
     end --for
 end --func
 

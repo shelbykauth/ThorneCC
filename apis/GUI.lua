@@ -292,3 +292,9 @@ function GetCenteredString(str)
     end --if
     return str
 end --function
+
+function WaitForEnter()
+    repeat
+        local event, key, held = os.pullEvent("key")
+    until key == 28
+end --function
