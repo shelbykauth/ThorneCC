@@ -159,7 +159,7 @@ end --func
 
 function Note:play()
     local ao = config.audioOut
-    if (ao:find("peripheral/speaker/CCTweaked/")) then
+    if (ao:find("CCTweakedSpeaker")) then
         for i, peri in ipairs(instance.speakers) do
             peri.playNote(self.instrument, config.volume or 1, self.pitch)
         end --for
