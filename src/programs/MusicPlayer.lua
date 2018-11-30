@@ -46,7 +46,8 @@ function selectSongScreen()
     end --for
     selection = GUI.SimpleSelectionScreen(lines, 1)
     if (songs[selection]) then
-        songs[selection]:play()
+        eventIndex = ThorneEvents.UnSubscribe(eventIndex)
+        ThorneEvents.SubscribeOnce(function()songs[selection]:play()end, eventIndex)
     elseif (selection == 1) then
         screen = "end"
     end --if
@@ -58,7 +59,10 @@ actions = {
     setup = setupScreen,
     mode = modeScreen,
 }
-screen = "select"
-repeat
-    actions[screen]()
-until (screen == "end" or not actions[screen])
+ThorneEvents.SubscribeOnce(function()
+    screen = "select"
+    repeat
+        actions[screen]()
+    until (screen == "end" or not actions[screen])
+    ThorneEvents.UnSubscribe(eventIndex)
+end)
