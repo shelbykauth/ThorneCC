@@ -34,6 +34,7 @@ end --func
 
 local success = download("/apis/ThorneAPI.lua")
 success = success and download("/apis/GUI.lua")
+success = success and download("/apis/ThorneKeys.lua")
 download("images/logo.nfp", {"noVersion"})
 download("images/logo.1.nfp", {"noVersion"})
 
