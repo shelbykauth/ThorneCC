@@ -298,3 +298,59 @@ function WaitForEnter()
         local event, key, held = os.pullEvent("key")
     until key == 28
 end --function
+
+function WaitForEvent(expectedTypes)
+    if (expectedTypes == nil) then expectedTypes = {} end
+    if (type(expectedTypes) == "string") then expectedTypes = {[expectedTypes]=true} end
+    for k,v in ipairs(expectedTypes) do
+        expectedTypes[v] = true
+    end --for
+    repeat
+        event, p1, p2, p3, p4, p5 = os.pullEvent()
+        if (expectedTypes[event]) then
+            return event, p1, p2, p3, p4, p5
+        end --if
+    until false
+end --func
+
+function DisplayImage(img)
+    local path, image, fileR, fileW
+    if (not term.isColor()) then
+        local colorDef, bwDef
+        colorDef = "0123456789abcdef"
+        bwDef = "088888878777777f"
+        path = "/ThorneCC/images/"..img..".bw.nfp"
+        if (not fs.exists(path)) then
+            local fileR, fileW, imageText
+            fileR = fs.open("/ThorneCC/images/"..img..".nfp", "r")
+            fileW = fs.open(path, "w")
+            imageText = fileR.readAll()
+            fileR.close()
+            for i=1,16 do
+                local a = string.sub(colorDef, i, i)
+                local b = string.sub(bwDef, i, i)
+                print(a,"=>",b)
+                imageText = string.gsub(imageText, a, b)
+            end --for
+            GUI.WaitForEnter()
+            fileW.write(imageText)
+            fileW.close()
+        end --if
+    else
+        path = "/ThorneCC/images/"..img..".nfp"
+    end --if
+    local image = paintutils.loadImage(path)
+    if (image) then
+        local x,y,w,h
+        w,h = term.getSize()
+        term.setTextColor(colors.gray)
+        for y = 1,h do
+            term.setCursorPos(1,y)
+            term.write(string.rep(string.char(127), w))
+        end --for
+        term.setTextColor(colors.white)
+        paintutils.drawImage(image, 1, 1)    
+    else
+        print(path, "does not exist.")
+    end --if
+end --func
