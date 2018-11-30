@@ -36,7 +36,7 @@ local success = download("/apis/ThorneAPI.lua")
 success = success and download("/apis/GUI.lua")
 success = success and download("/apis/ThorneKeys.lua")
 download("images/logo.nfp", {"noVersion"})
-download("images/logo.1.nfp", {"noVersion"})
+download("images/logo.bw.nfp", {"noVersion"})
 
 if (not success) then
     print("I'm sorry.  We can't seem to download the necessary files to get you started.")
