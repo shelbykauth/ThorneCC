@@ -34,6 +34,7 @@ end --func
 
 local success = download("/apis/ThorneAPI.lua")
 success = success and download("/apis/GUI.lua")
+success = success and download("/apis/ThorneEvents.lua")
 success = success and download("/apis/ThorneKeys.lua")
 download("images/logo.nfp", {"noVersion"})
 download("images/logo.bw.nfp", {"noVersion"})
@@ -45,6 +46,7 @@ if (not success) then
 end --if
 
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
+os.loadAPI("/ThorneCC/apis/ThorneEvents.lua")
 os.loadAPI("/ThorneCC/apis/ThorneKeys.lua")
 os.loadAPI("/ThorneCC/apis/GUI.lua")
 
