@@ -1,5 +1,7 @@
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
 os.loadAPI("/ThorneCC/apis/GUI.lua")
+os.loadAPI("/ThorneCC/apis/MusicAPI.lua")
+os.loadAPI("/ThorneCC/apis/ThorneEvents.lua")
 --[[
     Author: Dartania Thorne
     Functionality:
@@ -15,6 +17,7 @@ os.loadAPI("/ThorneCC/apis/GUI.lua")
 ]]--
 
 local screen = ""
+local eventIndex = "Song"
 
 function setupScreen()
     local lines = {
@@ -46,8 +49,8 @@ function selectSongScreen()
     end --for
     selection = GUI.SimpleSelectionScreen(lines, 1)
     if (songs[selection]) then
-        eventIndex = ThorneEvents.UnSubscribe(eventIndex)
-        ThorneEvents.SubscribeOnce(function()songs[selection]:play()end, eventIndex)
+        ThorneEvents.UnSubscribe(eventIndex)
+        eventIndex = ThorneEvents.SubscribeOnce(function()songs[selection]:play()end, eventIndex)
     elseif (selection == 1) then
         screen = "end"
     end --if
@@ -61,7 +64,19 @@ actions = {
 }
 ThorneEvents.SubscribeOnce(function()
     screen = "select"
+    GUI.DisplayImage("logo")
+    os.startTimer(2)
+    GUI.WaitForEvent({'key', 'timer'})
     repeat
+        if (not MusicAPI.config.speakers[1]) then
+            check = GUI.ConfirmBox("Run Setup?")
+            if (check) then
+                MusicAPI.runSetup(true)
+                print("All set up!")
+                os.startTimer(.5)
+                GUI.WaitForEvent({'key', 'timer'})
+            end --if
+        end --if
         actions[screen]()
     until (screen == "end" or not actions[screen])
     ThorneEvents.UnSubscribe(eventIndex)
