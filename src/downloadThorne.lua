@@ -44,6 +44,7 @@ if (not success) then
 end --if
 
 os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
+os.loadAPI("/ThorneCC/apis/ThorneKeys.lua")
 os.loadAPI("/ThorneCC/apis/GUI.lua")
 
 local modules = {
