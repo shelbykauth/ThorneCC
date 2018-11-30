@@ -69,6 +69,9 @@ local modules = {
 local lines = {}
 for k,v in pairs(modules) do
     table.insert(lines, k)
+    for i,path in pairs(v) do
+        download(path)
+    end --for
 end --for
 
 --GUI.Display(lines, 0, {1,2})
