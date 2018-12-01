@@ -17,13 +17,15 @@ function Subscribe(action, index)
     local co = coroutine.create(action)
     __functions[index] = {action=action, co=co, times="many"}
     if (not __isRunning) then run() end
+    os.startTimer(0)
     return index
 end --func
 
 function UnSubscribe(index)
     if (not index) then return false end
     local co = __functions[index]
-    __functions[index] = nil
+    __functions[index] = {}
+    os.startTimer(0)
     return true
 end --func
 
@@ -35,6 +37,7 @@ function SubscribeOnce(action, index)
     local co = coroutine.create(action)
     __functions[index] = {action=action, co=co, times="one"}
     if (not __isRunning) then run() end
+    os.startTimer(0)
     return index
 end --func
 
@@ -45,6 +48,7 @@ end --func
 function run()
     __isRunning = true
     print("Start Round Robin")
+    os.startTimer(0)
     repeat
         local keysToRemove = {}
         local count = 0
@@ -52,10 +56,8 @@ function run()
         for k,v in pairs(__functions) do
             count = count + 1
             local co = v.co
-            --print(k, coroutine.status(co))
-            --print(k, coroutine.status(co))
-            if (coroutine.status(co) == "dead") then
-                if (__functions[k].times == "one") then
+            if (not v.co or coroutine.status(co) == "dead") then
+                if (v.times == "one" or not v.co) then
                     keysToRemove[k] = true
                 else
                     v.co = coroutine.create(v.action)
