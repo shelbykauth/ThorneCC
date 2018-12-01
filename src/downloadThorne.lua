@@ -1,6 +1,7 @@
 -- v0.0.0
 local ThorneVersion = "0.0.0"
 function download(path, options)
+    options = options or {}
     local url, localPath, file, response, fileVersion
     url = "https://shelbykauth.github.io/ThorneCC/src/"..path
     localPath = "/ThorneCC/"..path
@@ -23,7 +24,9 @@ function download(path, options)
     else
         print("Saving to "..localPath)
         file = io.open(localPath, "w")
-        file:write("-- v"..ThorneVersion.."\n")
+        if (not options.noVersion) then
+            file:write("-- v"..ThorneVersion.."\n")
+        end --if
         file:write(response.readAll())
         file:close()
         response:close()
@@ -36,8 +39,8 @@ local success = download("/apis/ThorneAPI.lua")
 success = success and download("/apis/GUI.lua")
 success = success and download("/apis/ThorneEvents.lua")
 success = success and download("/apis/ThorneKeys.lua")
-download("images/logo.nfp", {"noVersion"})
-download("images/logo.bw.nfp", {"noVersion"})
+download("images/logo.nfp", {noVersion=true})
+download("images/logo.bw.nfp", {noVersion=true})
 
 if (not success) then
     print("I'm sorry.  We can't seem to download the necessary files to get you started.")
