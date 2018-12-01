@@ -1,0 +1,18 @@
+#REST
+_
+#DELIM
+ ,
+#NOTES
+0123456789abcdefghijklmno
+#G|A|BC|D|EF|G|A|BC|D|EF|
+# only edit below this line
+#TITLE
+Notification
+#TEMPO
+60
+#TRACKS
+          |________|________|
+Xylophone |68abd___|68abd___|
+Pling     |68abd___|68abd___|
+Bell      |68abd___|68abd___|
+Chimes    |68abd___|68abd___|

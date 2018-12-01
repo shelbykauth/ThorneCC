@@ -87,14 +87,10 @@ function Song:play(options)
         end --for
     end --for
     for i, notes in ipairs(allNotes) do
-        local startTime = os.clock()
         for _,n in pairs(notes) do
             n:play()
         end --for
-        repeat 
-            os.sleep(0)
-            local endTime = os.clock()
-        until endTime - startTime >= timePerEighth
+        ThorneEvents.sleep(timePerEighth)
     end --for
 end --func
 
@@ -161,7 +157,8 @@ function Note:play()
     local ao = config.audioOut
     if (ao:find("CCTweakedSpeaker")) then
         for i, peri in ipairs(instance.speakers) do
-            peri.playNote(self.instrument, config.volume or 1, self.pitch)
+            --print(self.instrument, self.volume, self.pitch)
+            peri.playNote(self.instrument, self.volume or config.volume or 1, self.pitch)
         end --for
     end --if
 end --func
@@ -209,11 +206,23 @@ function playSong(song, options)
     song:play(options)
 end --func
 
-function playNote(str, instrument)
-    local n = {
-        instrument = getInstrument(instrument),
-        pitch = config.notation.notes:find(str),
-    }
+function playNote(str, instrument, volume)
+    --print(str, instrument, volume)
+    --os.sleep(.3)
+    local n
+    if (type(str) == 'string') then
+        n = {
+            instrument = getInstrument(instrument),
+            pitch = config.notation.notes:find(str),
+            volume = volume,
+        }
+    elseif (type(str) == 'number') then
+        n = {
+            instrument = getInstrument(instrument),
+            pitch = str,
+            volume = volume,
+        }
+    end --if
     note = Note:new(n)
     note:play()
 end --func

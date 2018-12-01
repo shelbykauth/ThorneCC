@@ -1,0 +1,18 @@
+#REST
+_
+#DELIM
+ ,
+#NOTES
+0123456789abcdefghijklmno
+#G|A|BC|D|EF|G|A|BC|D|EF|
+# only edit below this line
+#TITLE
+***SCREECH***
+#TEMPO
+60
+#TRACKS
+          |________|________|
+Xylophone |ijkfgacn|__8_8___|
+Pling     |efdcbejk|__c_d___|
+Bell      |fghfgddm|__f_h___|
+Chimes    |fdnifen3|h_f_d___|
