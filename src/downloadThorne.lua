@@ -62,6 +62,7 @@ local modules = {
     Music = {
         "/apis/MusicAPI.lua",
         "/programs/MusicPlayer.lua",
+        "/programs/Trance.lua",
         "/config/music",
         "/data/music/songs/HotCrossBuns.txt"
     },
