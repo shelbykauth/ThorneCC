@@ -91,6 +91,5 @@ end --if
 GUI.DisplayImage("logo")
 os.startTimer(2)
 GUI.WaitForEvent({'key', 'timer'})
-term.clear()
-term.setCursorPos(1,1)
+os.reboot()
 --GUI.Display(lines, 0, {1,2})
