@@ -64,7 +64,10 @@ local modules = {
         "/programs/MusicPlayer.lua",
         "/programs/Trance.lua",
         "/config/music",
-        "/data/music/songs/HotCrossBuns.txt"
+        "/data/music/songs/HotCrossBuns.txt",
+        "/data/music/songs/Notify.txt",
+        "/data/music/songs/Sampler.txt",
+        "/data/music/songs/Screech.txt",
     },
     Robots = {
         "/apis/ThorneBot.lua",
