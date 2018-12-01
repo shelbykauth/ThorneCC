@@ -80,4 +80,15 @@ for k,v in pairs(modules) do
     end --for
 end --for
 
+local writeStartup = GUI.ConfirmBox("Write Startup File?")
+if (writeStartup) then
+    local file = fs.open("startup.lua", "w")
+    file:write("shell.setPath(shell.path()..':/ThorneCC/programs')")
+    file:flush()
+    file:close()
+end --if
+
+GUI.DisplayImage("logo")
+os.startTimer(2)
+GUI.WaitForEvent({'key', 'timer'})
 --GUI.Display(lines, 0, {1,2})
