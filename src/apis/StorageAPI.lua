@@ -24,7 +24,7 @@ end --func
 function getItemList(itemFilter)
     local list = {}
     if (itemFilter == nil) then itemFilter = {} end
-    if (typeof(itemFilter) == 'string') then itemFilter = {name={itemFilter}} end
+    if (type(itemFilter) == 'string') then itemFilter = {name={itemFilter}} end
     for name,item in pairs(ItemList) do
         if (true) then
             table.insert(list, name)
@@ -53,6 +53,13 @@ end --func
 
 function setLocationTag(chestName, tag)
 
+end --func
+
+function getItemId(item)
+    local name = item.name
+    if (item.nbtHash) then name = name .. "_" .. item.nbtHash end
+    if (item.damage) then name = name .. "_" .. item.damage end
+    return name
 end --func
 
 function getItemDetails(itemName)
@@ -85,16 +92,24 @@ function Recount(locationFilter, newDetails)
     for chestName,chest in pairs(ChestList) do
         local oldItems = {}
         for i,item in pairs(chest.items) do
-            oldItems[item.name] = true
+            oldItems[getItemId(item)] = true
         end --for
         local items = peripheral.call(chestName, "list")
         chest.items = items
         for i,item in pairs(items) do
-            thisItem = ItemList[item.name] or {
-                name=item.name
+            local id = getItemId(item)
+            thisItem = ItemList[id] or {
+                id = id,
+                name = item.name,
+                damage = item.damage,
+                nbtHash = item.nbtHash,
+                metadata = item
             }
+            ItemList[id] = thisItem
+            print(id)
         end --for
     end --for
+    os.pullEvent("key")
 end --func
 
 function FindLocations()

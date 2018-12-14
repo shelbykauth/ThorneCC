@@ -15,6 +15,21 @@ function hex(x)
     return nil
 end --func
 
+function getNibbles(bytes)
+    if type(bytes) ~= "table" then
+        bytes = {bytes}
+    end --if
+    local nibbles = {}
+    for i,by in pairs(bytes) do
+        if type(by) == 'string' then by = hex(by) end
+        local small = by%16
+        local big   = by-small
+        nibbles[i*2 - 1] = big
+        nibbles[i*2] = small
+    end --for
+    return nibbles
+end --func
+
 function getStringFromBytes(bytes, m,n)
     if (not m) then m = 1 end
     if (not n) then n = table.getn(bytes) end
@@ -61,7 +76,7 @@ function grabChunk(file)
     for i=1,4 do
         local byte = file.read()
         if (not byte) then
-            file.close()
+            --file.close()
             return false
         end --if
         chunk._type = chunk._type .. string.char(byte)
@@ -264,7 +279,7 @@ function parseChunk(chunk, header)
         while (i < table.getn(chunk.bytes)) do
             event, i = getEvent(chunk.bytes, i)
             table.insert(chunk.events, event)
-            applyEvent(event)
+            --applyEvent(event)
             --GUI.LookAtObject(event)
         end --while
     end --if
@@ -272,7 +287,34 @@ function parseChunk(chunk, header)
 end --func
 
 function DebugTrack(track)
-    GUI.LookAtObject(track)
+    print("==Debug==")
+    --GUI.LookAtObject(track)
+    local i = 1
+    while (i < table.getn(track.events)) do
+        event = track.events[i]
+        applyEvent(event)
+        local ev,key = os.pullEvent("key")
+        if (key == 28) then -- enter key
+            i = table.getn(track.events)
+        end --if
+        i = i + 1
+    end --while
+    i = 1
+    while (i < table.getn(track.bytes)) do
+        local x = 1
+        local str = ""
+        while (x < 50) do
+            byte = hex(track.bytes[i])
+            str = str .. byte .. "x "
+            i = i + 1
+            x = x + 4
+        end --while
+        print(str)
+        local ev,key = os.pullEvent("key")
+        if (key == 28) then -- enter key
+            i = table.getn(track.bytes)
+        end --if
+    end --while
 end --func
 
 function loadMidiWithGUI(path)
@@ -289,10 +331,14 @@ function loadMidiWithGUI(path)
             trackNumber = table.getn(tracks)
         end --if
     until not track
-    parseChunk(tracks[4])
-    DebugTrack(tracks[4])
+    for i, t in pairs(tracks) do
+        parseChunk(t);
+        DebugTrack(t);
+    end --for
     print (table.getn(tracks).." Tracks")
+
+
     song.tracks = tracks
-    file.close()
+    pcall(file.close)
     return song
 end --func

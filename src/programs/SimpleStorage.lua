@@ -16,8 +16,6 @@ function displayMenu()
         title="SimpleStorage | Menu"
     }
     selection = GUI.SimpleSelectionScreen(lines, selection, options)
-    print(selection)
-    print(actions[selection])
     actions[selection]()
 end --func
 
@@ -31,7 +29,12 @@ function listLocations()
 end
 
 function listItems()
-
+    local lines = StorageAPI.getItemList()
+    local options = {
+        title="Items"
+    }
+    selection = GUI.SimpleSelectionScreen(lines, selection, options)
+    GUI.LookAtObject(StorageAPI.getItemDetails(lines[selection]))
 end
 
 actions = {
