@@ -1,0 +1,71 @@
+const fs = require('fs');
+const path = require('path');
+
+/* Node.js File!!! */
+/* Replace all directory comments with the actual directory paths!!! */
+/* This is a template file!!!  Rename with .js extension. */
+/* Run with the following line to automatically copy the files */
+/* nodemon --ext '.lua,.js,.txt,.nfp' ./copier.js */
+
+console.log("\n\n\n\n\n\n\n\n\n\n\n\n\n");
+console.log("Copying Files");
+
+var toPath = /*Games Directory + */ "/Minecraft/MultiMC/instances/";
+var fromPath = /*Project Directory + */ "/Lua/ThorneCC/src/";
+var errors = [];
+var multiMCDestinations = {
+    "TinkeringComputers": {
+        "Builders Delight": [33, 54, 52, 6, 57, 56]
+    }
+};
+var CCEmuXDestinations = [0];
+
+var promises = [];
+
+for (var instance in multiMCDestinations) {
+    for (var world in multiMCDestinations[instance]) {
+        for (var i in multiMCDestinations[instance][world]) {
+            var compId = multiMCDestinations[instance][world][i].toString();
+            var to = path.join(toPath, instance, ".minecraft/saves/", world, "/computer/", compId);
+            checkDir(to);
+            to = path.join(to, "/ThorneCC/");
+            checkDir(to);
+            copyDir(fromPath, to);
+        }
+    }
+}
+for (var i in CCEmuXDestinations) {
+    var compId = CCEmuXDestinations[i].toString();
+    var to = path.join( /*AppData Roaming Directory + */ "/ccemux/computer/", compId);
+    checkDir(to);
+    to = path.join(to, "/ThorneCC/");
+    copyDir(fromPath, to);
+}
+
+console.log("All done!");
+
+function copyDir(from, to, indent) {
+    indent = (indent || "") + "  "
+    checkDir(to);
+    var files = fs.readdirSync(from, { withFileTypes: true });
+    for (var i in files) {
+        var basename = files[i].name;
+        var isDir = files[i].isDirectory();
+        console.log(indent + basename);
+        try {
+            (isDir ? copyDir : fs.copyFileSync)(
+                path.join(from, basename),
+                path.join(to, basename),
+                indent
+            );
+        } catch (e) {
+            errors.push(e);
+        }
+    }
+}
+
+function checkDir(path) {
+    if (!fs.existsSync(path)) {
+        fs.mkdirSync(path);
+    }
+}
