@@ -1,7 +1,8 @@
--- MidiAPI.lua
--- A Midi Parser (and maybe player?  I don't know yet)
-os.loadAPI("/ThorneCC/apis/GUI.lua")
-os.loadAPI("/ThorneCC/apis/MusicAPI.lua")
+local songs = {}
+local config = {
+    PlayNote = function(instrumentId, pitch, velocity)end,
+
+}
 
 function hex(x)
     if (type(x) == 'string') then
@@ -92,21 +93,27 @@ end --func
 
 function applyMidiEvent(event, trackInstance, songInstance)
     --print(table.concat(event._data, ", "))
-    local choice = event._subtype:sub(1,1)
+    local choice = event._subtype
+    local channel = event.channel
     if (choice == "8") then
-        print("Note Off.  Key:", event._data[1], " Velocity: ", event._data[2])
+        --print("Note Off.  Key:", event._data[1], " Velocity: ", event._data[2])
     elseif (choice == "9") then
-        print("Note On.   Key:", event._data[1], " Velocity: ", event._data[2])
+        --print("Note On.   Key:", event._data[1], " Velocity: ", event._data[2])
+        print(channel)
+        if (songInstance.channels[channel]) then
+            SoundAPI.MidiNoteOn(songInstance.channels[channel].instrumentId, event._data[1], event._data[2]) 
+        end --if
     elseif (choice == "A") then
-        print("Midi Event...After Touch")
+        --print("Midi Event...After Touch")
     elseif (choice == "B") then
-        print("Midi Event...Controller Change")
+        --print("Midi Event...Controller Change")
     elseif (choice == "C") then
-        print("Midi Event...Program Change")
+        --print("Midi Event...Program Change")
+        songInstance.channels[channel] = {instrumentId = event._data[1]}
     elseif (choice == "D") then
-        print("Midi Event...Channel Key Pressure")
+        --print("Midi Event...Channel Key Pressure")
     elseif (choice == "E") then
-        print("Midi Event...Pitch Bend")
+        --print("Midi Event...Pitch Bend")
     else
         print("Midi Event...Big ErRoR")
         print(textutils.serialize(event._allBytes))
@@ -140,7 +147,7 @@ function applyMetaEvent(event, trackInstance, songInstance)
         -- trackInstance.channel = ""
     elseif (choice == "21x") then
         local portPrefix = event._data[1]
-        print("Port Prefix: channel", channelPrefix)
+        print("Port Prefix: port", portPrefix)
         -- trackInstance.port = ""
     elseif (choice == "2Fx") then
         print("End Of Track")
@@ -206,13 +213,14 @@ function applyEvent(event, trackInstance, songInstance)
     end --if
 end --func
 
-function getEvent(bytes, start_index)
+function getEvent(bytes, start_index, prev_event)
     local i = start_index
     if i >= table.getn(bytes) then
         return nil
     end --if
     local event = {
         deltaTime = 0,
+        absoluteTime = 0,
         _type = "",
         _subtype = "",
         _byteLength = 0,
@@ -221,6 +229,7 @@ function getEvent(bytes, start_index)
         _dataString = "",
     }
     event.deltaTime, i = getVarWidthInt(bytes, i)
+    event.absoluteTime = (prev_event and prev_event.absoluteTime or 0) + event.deltaTime
     event._firstByte = hex(bytes[i]):upper()
     i = i + 1
     if (event._firstByte == "FF") then
@@ -237,8 +246,13 @@ function getEvent(bytes, start_index)
         event._byteLength, i = getVarWidthInt(bytes, i)
     else
         event._type = "Midi"
-        event._subtype = event._firstByte .. "x"
-        if (event._subtype:find("^[CD]")) then
+        if (hex(event._firstByte) < 127) then
+            i = i - 1
+            event._firstByte = prev_event._firstByte
+        end --if
+        event._subtype = string.sub(event._firstByte, 1, 1)
+        event.channel = string.sub(event._firstByte, 2, 2) + 1
+        if (event._subtype == "C" or event._subtype == "D") then
             event._byteLength = 1
         else
             event._byteLength = 2
@@ -260,7 +274,6 @@ function getEvent(bytes, start_index)
     --event._allBytes = table.concat(bytes, ", ", start_index, end_index)
     return event, end_index + 1
 end --func
-local trackNumber = 0
 
 function parseChunk(chunk, header)
     if (chunk._type == "MThd") then
@@ -275,24 +288,24 @@ function parseChunk(chunk, header)
     end --if
     if (chunk._type == "MTrk") then
         chunk.events = {}
+        chunk.channels = {}
         local i = 1
+        local event = nil
         while (i < table.getn(chunk.bytes)) do
-            event, i = getEvent(chunk.bytes, i)
+            event, i = getEvent(chunk.bytes, i, event)
             table.insert(chunk.events, event)
             --applyEvent(event)
-            --GUI.LookAtObject(event)
         end --while
     end --if
     return chunk
 end --func
 
-function DebugTrack(track)
+function DebugTrack(track, song)
     print("==Debug==")
-    --GUI.LookAtObject(track)
     local i = 1
     while (i < table.getn(track.events)) do
         event = track.events[i]
-        applyEvent(event)
+        applyEvent(event, track, song)
         local ev,key = os.pullEvent("key")
         if (key == 28) then -- enter key
             i = table.getn(track.events)
@@ -303,8 +316,8 @@ function DebugTrack(track)
     while (i < table.getn(track.bytes)) do
         local x = 1
         local str = ""
-        while (x < 50) do
-            byte = hex(track.bytes[i])
+        while (x < 50 and i < table.getn(track.bytes)) do
+            local byte = hex(track.bytes[i])
             str = str .. byte .. "x "
             i = i + 1
             x = x + 4
@@ -317,11 +330,210 @@ function DebugTrack(track)
     end --while
 end --func
 
+function LoadSong(path, id)
+    if (not string.find(path, ".mid$")) then
+        return false
+    end
+    if (not id) then
+        _,_,id = string.find(path, "(%w*).mid")
+    end --func
+    local file = fs.open(path, "rb")
+    if (not file) then
+        return false
+    end --if
+    local song = {
+        channels = {},
+        tempo = 500000,
+        tpb = 24,
+        lastTick = 0,
+    }
+    for i=1,16 do
+        song.channels[i] = {}
+    end --for
+    song.channels[10] = { instrumentId=116 }
+
+    song.header = parseChunk(grabChunk(file))
+    tracks = {}
+    repeat
+        local track = grabChunk(file)
+        if (track and track._type == "MTrk") then
+            table.insert(tracks,track)
+            track.trackNumber = table.getn(tracks)
+        end --if
+    until not track
+    for i, t in pairs(tracks) do
+        parseChunk(t);
+        lastEvent = t.events[table.getn(t.events)]
+        song.lastTick = math.max(song.lastTick, lastEvent.absoluteTime)
+    end --for
+    song.tracks = tracks
+    pcall(file.close)
+    songs[id] = song
+    return song
+end --func
+
+function preprocessSong(song)
+    -- Info Looking For --
+    -- Song Title --
+    -- Song Length --
+    -- Tempo --
+    --+ Each Track +--
+        -- Track Title --
+        -- Track Length --
+        --+ All Instruments +--
+        --+ Channels Used +--
+        -- Max Pitch --
+        -- Min Pitch --
+    --+ Each Channel +--
+        -- instrument switches --
+    local info = {
+        title = "",
+        ticks = 0,
+        length = 0,
+        tempo = 500000, -- 120 beats/minute, .5 s/qn
+        tpqn = song.header.ticksPerQuarterNote, -- typically 24
+        tracks = {},
+        channels = {},
+        tempoChanges = {
+            {tick = 0, newTempo = 500000}
+            -- {tick:###, newTempo:###}
+        }
+    }
+    for i=1,16 do
+        info.channels[i] = {
+            instruments = {},
+            highestPitch = -1,
+            lowestPitch = 999,
+        }
+    end --for
+    for i,t in ipairs(song.tracks) do
+        info.tracks[i] = {
+            highestPitch = -1,
+            lowestPitch = 999,
+            channels = {},
+            instruments = {},
+        }
+        for j,e in ipairs(t.events) do
+            info.tracks[i].ticks = e.absoluteTime
+            if (e._type == "Midi") then
+                info.tracks[i].channels[e.channel] = true
+                if (e._subtype == "9") then
+                    info.tracks[i].highestPitch = math.max(info.tracks[i].highestPitch, e._data[1])
+                    info.channels[e.channel].highestPitch = math.max(info.channels[e.channel].highestPitch, e._data[1])
+                    info.tracks[i].lowestPitch = math.min(info.tracks[i].lowestPitch, e._data[1])
+                    info.channels[e.channel].lowestPitch = math.min(info.channels[e.channel].highestPitch, e._data[1])
+                elseif (e._subtype == "C") then
+                    table.insert(info.tracks[i].instruments, SoundAPI.GetInfo("Instrument Name", e._data[1]))
+                    table.insert(info.channels[e.channel].instruments, SoundAPI.GetInfo("Instrument Name", e._data[1]))
+                end --if
+            elseif (e._type == "Meta") then
+                if (e._subtype == "03x") then
+                    info.tracks[i].trackName = e._dataString
+                elseif (e._subtype == "51x") then
+                    table.insert(info.tempoChanges, {tick=e.absoluteTime, newTempo = getFixedWidthInt(e._data, 1, 3)})
+                end --if
+            end --if
+        end --for
+        local channelList = {}
+        for k,v in pairs(info.tracks[i].channels) do table.insert(channelList, k) end
+        info.ticks = math.max(info.ticks, info.tracks[i].ticks)
+        -- print ("==Track",i,"-",info.tracks[i].trackName,"==")
+        -- print(info.tracks[i].ticks,"ticks")
+        -- print("Range:",info.tracks[i].lowestPitch,"-",info.tracks[i].highestPitch)
+        -- print("Instruments:",table.concat(info.tracks[i].instruments, ","))
+        -- print("Channels:", table.concat(channelList, ","))
+        --os.pullEvent("key")
+    end --for
+    table.insert(info.tempoChanges, {tick=info.ticks})
+    local prevTempo = nil
+    for i,tempo in ipairs(info.tempoChanges) do
+        if prevTempo then
+            local elapsedTicks = tempo.tick - prevTempo.tick
+            local spb = prevTempo.newTempo / 1000000
+            local tpb = song.header.ticksPerQuarterNote
+            local spt = spb / tpb
+            local elapsedTime = spt * elapsedTicks
+            info.length = info.length + elapsedTime
+        end --if
+        prevTempo = tempo
+    end --for
+    -- print ("==Whole Song==")
+    -- print ("Time:",info.length,"Seconds")
+    return info
+end --func
+
+function PlaySong(song, handlers)
+    if (not handlers) then
+        handlers = {}
+    elseif (type(handlers) == "function") then
+        handlers = {handlers}
+    elseif (type(handlers) ~= "table") then
+        error("bad argument#2(handlers): expected table, got "..type(handlers))
+    end --if
+
+    function changeTempo(tempo)
+        local spb = tempo / 1000000
+        local tpb = song.header.ticksPerQuarterNote
+        local tps = tpb / spb
+        song.tps = tps
+    end --func
+    function applyEvent(e)
+        for i,f in pairs(handlers) do
+            f(e, song)
+        end --for
+        if (e._type == "Meta") then
+            if (string.sub(e._subtype, 1,1) == "0") then
+                
+            elseif (e._subtype == "51x") then
+                changeTempo(getFixedWidthInt(e._data, 1, 3))
+            end --if
+        elseif (e._type == "Midi") then
+            if (e._subtype == "9") then
+                SoundAPI.MidiNoteOn(song.channels[e.channel].instrumentId, e._data[1], e._data[2])
+            elseif (e._subtype == "C") then
+                song.channels[e.channel].instrumentId = e._data[1]
+            end --if
+        end --if
+    end --func
+
+    song.currentTick = 0
+    local pointers = {}
+    for i,t in ipairs(song.tracks) do
+        pointers[i] = 1
+    end --for
+    
+    changeTempo(song.tempo)
+    while (song.currentTick < song.lastTick) do
+        local startTime = os.clock()
+        for i,t in ipairs(song.tracks) do
+            repeat
+                local doBreak = false
+                local event = t.events[pointers[i]]
+                if (not event) then
+                    pointers[i] = -1
+                    doBreak = true
+                elseif (event.absoluteTime <= song.currentTick) then
+                    applyEvent(event)
+                    pointers[i] = pointers[i] + 1
+                else
+                    doBreak = true
+                end --if
+            until doBreak
+        end --for
+        os.sleep(0)
+        local endTime = os.clock()
+        local timeElapsed = endTime - startTime
+        local ticksElapsed = song.tps * timeElapsed
+        song.currentTick = song.currentTick + ticksElapsed
+        GUI.LoadingScreen("Playing Song", song.currentTick, song.lastTick)
+    end --while
+end --func
+
 function loadMidiWithGUI(path)
     local file = fs.open(path, "rb")
     local song = {}
     song.header = parseChunk(grabChunk(file))
-    GUI.LookAtObject(song.header)
+    -- GUI.LookAtObject(song.header)
     tracks = {}
     repeat
         local track = grabChunk(file)

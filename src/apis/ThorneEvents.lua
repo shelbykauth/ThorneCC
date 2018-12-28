@@ -63,7 +63,11 @@ function run()
                     v.co = coroutine.create(v.action)
                 end --if
             else
-                coroutine.resume(co, table.unpack(stuff))
+                local success, value = coroutine.resume(co, table.unpack(stuff))
+                if (not success) then
+                    print(value)
+                    UnSubscribe(k)
+                end --if
             end --if
         end --for
         for k,v in pairs(keysToRemove) do

@@ -1,4 +1,5 @@
 os.loadAPI("/ThorneCC/apis/ThorneKeys.lua")
+os.loadAPI("/ThorneCC/apis/ThorneEvents.lua")
 --[[
     Author: Dartania Thorne, except where otherwise stated
     General Purpose Functions that make a nice, simple GUI in computercraft.
@@ -353,4 +354,58 @@ function DisplayImage(img)
     else
         print(path, "does not exist.")
     end --if
+end --func
+
+function Menu(items, options)
+    -- item[i].text = "Choose this option"
+    -- item[i].action = function() doOption end
+    -- item[i].suspension = "stop"|"suspend"|"continue" default suspension
+    -- options.title = "Menu Title"
+    -- options.helpText = "Menu Help Text"
+    if (type(items) ~= "table") then
+        error("bad argument#1: table expected, got "..type(items), 2)
+    end --if
+    if (type(options) ~= "table") then
+        options = {}
+    end --if
+    local list = {}
+    for i,item in ipairs(items) do
+        if (type(item.text) ~= "string") then
+            error("bad argument#1: items["..i.."].text: string expected, got "..type(item.text), 2)
+        end --if
+        if (type(item.action) ~= "function") then
+            error("bad argument#1: items["..i.."].action: function expected, got "..type(item.text), 2)
+        end --if
+        list[i] = item.text
+    end --for
+    local MenuScreenEventID = "MenuScreen"
+
+    function playMenu()
+        local menuClosed = false
+        repeat
+            local sel = SimpleSelectionScreen(list, 1, options)
+            if (not sel) then
+                -- ThorneEvents.UnSubscribe(MenuScreenEventID)
+                menuClosed = true
+            end --if
+            local item = items[sel]
+            if (not item) then
+                -- ThorneEvents.UnSubscribe(MenuScreenEventID)
+                menuClosed = true
+                return sel
+            end --if
+            if (item.suspension == "stop") then
+                -- ThorneEvents.UnSubscribe(MenuScreenEventID)
+                menuClosed = true
+                item.action()
+            elseif (item.suspension == "continue") then
+                ThorneEvents.SubscribeOnce(item.action, "MenuItem"..sel)
+            else -- expect "suspend"
+                item.action()
+            end --if
+        until menuClosed
+        ThorneEvents.UnSubscribe("MidiLoop")
+    end --func
+
+    ThorneEvents.SubscribeOnce(playMenu, MenuScreenEventID)
 end --func

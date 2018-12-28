@@ -62,9 +62,28 @@ end --func
 
 function MidiTest()
     os.loadAPI("/ThorneCC/apis/MidiAPI.lua")
+    os.loadAPI("/ThorneCC/apis/SoundAPI.lua")
+    SoundAPI.FindSpeakers()
+    
     print("=== Testing Midi ===")
-    MidiAPI.loadMidiWithGUI("/ThorneCC/data/music/songs/HotelCalifornia.mid")
-    print("Not Failing")
+    print("First Song: Ring Of Fire")
+    song1 = MidiAPI.LoadSong("/ThorneCC/data/music/songs/RingOfFire.mid")
+    --MidiAPI.DebugTrack(song1.tracks[12], song1)
+    MidiAPI.preprocessSong(song1)    
+    
+    print("=== Testing Midi ===")
+    print("Second Song: Hotel California")
+    song2 = MidiAPI.LoadSong("/ThorneCC/data/music/songs/HotelCalifornia.mid")
+    MidiAPI.preprocessSong(song2)
+
+    print("=== Playing Songs ===")
+    MidiAPI.PlaySong(song2)
+    -- lines = {'1','2','3','4','5','6','7','8','9','10','11','12'}
+    -- sel = GUI.SimpleSelectionScreen(lines)
+    -- if (sel) then
+    --     print ("Track",sel)
+    --     MidiAPI.DebugTrack(song1.tracks[sel])
+    -- end --if
 end --func
 
 
@@ -72,14 +91,14 @@ end --func
 os.loadAPI("/ThorneCC/apis/GUI.lua")
 -- SELECT TEST --
 lines = {
+    "Midi Tests",
     "Character Print Test",
     "ThorneEvents Test",
-    "Midi Tests",
 }
 actions = {
+    MidiTest,
     CharacterTest,
     EventsTest,
-    MidiTest,
 }
 local selection = GUI.SimpleSelectionScreen(lines)
 if(actions[selection]) then

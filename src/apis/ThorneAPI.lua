@@ -324,6 +324,10 @@ function SaveObject(obj, path)
     file.close()
 end --function
 
+function CopyObject(obj)
+    return (textutils.unserialize(textutils.serialize(obj)))
+end --func
+
 function Alert()
     peris = peripheral.getNames()
     for k,v in ipairs(peris) do
