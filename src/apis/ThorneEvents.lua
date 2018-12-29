@@ -1,3 +1,4 @@
+os.loadAPI("/ThorneCC/apis/ThorneAPI.lua")
 local cycleTime = .05
 __functions = ThorneEvents and ThorneEvents.__repeatFunctions or {}
 __isRunning = false
@@ -67,6 +68,7 @@ function run()
                 if (not success) then
                     print(value)
                     UnSubscribe(k)
+                    ThorneAPI.LogError(value)
                 end --if
             end --if
         end --for

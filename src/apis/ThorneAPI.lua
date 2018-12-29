@@ -371,3 +371,17 @@ function CatchTypeError(var, exType, argId, exVar)
         error("bad argument "..argId..", expected "..expected..", got "..actual, 3)
     end
 end --function
+
+function LogError(msg, toScreen)
+    local VisualDebug = false
+    local log = fs.open("/ThorneCC/data/errorLog.txt", fs.exists("/ThorneCC/data/errorLog.txt") and "a" or "w")
+    log.write(tostring(math.floor(os.clock()*100)/100)..": "..tostring(msg).."\n")
+    log.close()
+    if (VisualDebug or toScreen) then
+        repeat
+            term.setCursorPos(6,1)
+            print(msg)
+            ev, key = os.pullEvent("key")
+        until key == 14
+    end --if
+end --func
