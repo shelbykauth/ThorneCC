@@ -1,7 +1,12 @@
-local songs = {}
 local config = {
     PlayNote = function(instrumentId, pitch, velocity)end,
-
+    eventHandlers = {},
+    tickHandlers = {},
+}
+status = MidiAPI and MidiAPI.status or {
+    currentSong = nil,
+    paused = true,
+    songs = {},
 }
 
 function hex(x)
@@ -99,7 +104,6 @@ function applyMidiEvent(event, trackInstance, songInstance)
         --print("Note Off.  Key:", event._data[1], " Velocity: ", event._data[2])
     elseif (choice == "9") then
         --print("Note On.   Key:", event._data[1], " Velocity: ", event._data[2])
-        print(channel)
         if (songInstance.channels[channel]) then
             SoundAPI.MidiNoteOn(songInstance.channels[channel].instrumentId, event._data[1], event._data[2]) 
         end --if
@@ -115,54 +119,53 @@ function applyMidiEvent(event, trackInstance, songInstance)
     elseif (choice == "E") then
         --print("Midi Event...Pitch Bend")
     else
-        print("Midi Event...Big ErRoR")
+        error("Midi Event...Big ErRoR")
         print(textutils.serialize(event._allBytes))
         --os.pullEvent("key")
         return false, "OutOfSequence"
     end --if
-    print(textutils.serialize(event._allBytes))
 end --func
 
 function applyMetaEvent(event, trackInstance, songInstance)
     local choice = event._subtype
     if (choice == "00x") then
-        print("Sequence Number:", getFixedWidthInt(event._data, 1,2))
+        -- print("Sequence Number:", getFixedWidthInt(event._data, 1,2))
     elseif (choice == "01x") then
-        print("Text Event:", string.char(table.unpack(event._data)))
+        -- print("Text Event:", string.char(table.unpack(event._data)))
     elseif (choice == "02x") then
-        print("Copyright Notice:", string.char(table.unpack(event._data)))
+        -- print("Copyright Notice:", string.char(table.unpack(event._data)))
     elseif (choice == "03x") then
-        print("Track Name:", string.char(table.unpack(event._data)))
+        -- print("Track Name:", string.char(table.unpack(event._data)))
     elseif (choice == "04x") then
-        print("Instrument Name:", string.char(table.unpack(event._data)))
+        -- print("Instrument Name:", string.char(table.unpack(event._data)))
     elseif (choice == "05x") then
-        print("Lyric:", string.char(table.unpack(event._data)))
+        -- print("Lyric:", string.char(table.unpack(event._data)))
     elseif (choice == "06x") then
-        print("Marker:", string.char(table.unpack(event._data)))
+        -- print("Marker:", string.char(table.unpack(event._data)))
     elseif (choice == "07x") then
-        print("Cue:", string.char(table.unpack(event._data)))
+        -- print("Cue:", string.char(table.unpack(event._data)))
     elseif (choice == "20x") then
         local channelPrefix = event._data[1]
-        print("Channel Prefix: channel", channelPrefix)
+        -- print("Channel Prefix: channel", channelPrefix)
         -- trackInstance.channel = ""
     elseif (choice == "21x") then
         local portPrefix = event._data[1]
-        print("Port Prefix: port", portPrefix)
+        -- print("Port Prefix: port", portPrefix)
         -- trackInstance.port = ""
     elseif (choice == "2Fx") then
-        print("End Of Track")
+        -- print("End Of Track")
         -- trackInstance.end()
     elseif (choice == "51x") then
         local msPerBeat = getFixedWidthInt(event._data, 1, 3)
-        print("Set Tempo to:", msPerBeat)
+        -- print("Set Tempo to:", msPerBeat)
         -- songInstance.tempo = msPerBeat
     elseif (choice == "54x") then
-        print("SMTPE Offset:")
+        -- print("SMTPE Offset:")
     elseif (choice == "58x") then
         local num = event._data[1]
         local den = math.pow(2, event._data[2])
-        print("Time Signature:", num.."/"..den)
-        print("    - MidiClocks per quarter note:", event._data[3])
+        -- print("Time Signature:", num.."/"..den)
+        -- print("    - MidiClocks per quarter note:", event._data[3])
     elseif (choice == "59x") then
         local keys = {
             [-7]="B",
@@ -188,18 +191,18 @@ function applyMetaEvent(event, trackInstance, songInstance)
         else
             key = keys[event._data[1]+3] .. "m"
         end --if
-        print("Key Signature:", key)
+        -- print("Key Signature:", key)
     elseif (choice == "7Fx") then
-        print("Sequencer-Specific Meta-event")
+        -- print("Sequencer-Specific Meta-event")
     else
-        print("Unknown Subtype "..choice)
+        -- print("Unknown Subtype "..choice)
         return false, "Unknown Subtype"
     end --if
     return true
 end --func
 
 function applySysexEvent(event, trackInstance, songInstance)
-    print("Cannot Handle Sysex Events")
+    -- print("Cannot Handle Sysex Events")
     return false, "Sysex Event"
 end --func
 
@@ -297,37 +300,8 @@ function parseChunk(chunk, header)
             --applyEvent(event)
         end --while
     end --if
+    os.sleep()
     return chunk
-end --func
-
-function DebugTrack(track, song)
-    print("==Debug==")
-    local i = 1
-    while (i < table.getn(track.events)) do
-        event = track.events[i]
-        applyEvent(event, track, song)
-        local ev,key = os.pullEvent("key")
-        if (key == 28) then -- enter key
-            i = table.getn(track.events)
-        end --if
-        i = i + 1
-    end --while
-    i = 1
-    while (i < table.getn(track.bytes)) do
-        local x = 1
-        local str = ""
-        while (x < 50 and i < table.getn(track.bytes)) do
-            local byte = hex(track.bytes[i])
-            str = str .. byte .. "x "
-            i = i + 1
-            x = x + 4
-        end --while
-        print(str)
-        local ev,key = os.pullEvent("key")
-        if (key == 28) then -- enter key
-            i = table.getn(track.bytes)
-        end --if
-    end --while
 end --func
 
 function LoadSong(path, id)
@@ -337,6 +311,9 @@ function LoadSong(path, id)
     if (not id) then
         _,_,id = string.find(path, "(%w*).mid")
     end --func
+    if (status.songs[id]) then
+        return true
+    end --if
     local file = fs.open(path, "rb")
     if (not file) then
         return false
@@ -368,8 +345,28 @@ function LoadSong(path, id)
     end --for
     song.tracks = tracks
     pcall(file.close)
-    songs[id] = song
+    status.songs[id] = song
     return song
+end --func
+
+function LoadAllSongs(path)
+    if (type(path) ~= "string") then path = "/" end
+    if (fs.isDir(path)) then
+        files = fs.list(path)
+        for i,f in pairs(files) do
+            LoadAllSongs(path .."/" .. f)
+        end --for
+    else
+        LoadSong(path)
+    end --if
+end --func
+
+function GetSongList()
+    local list = {}
+    for i,v in pairs(status.songs) do
+        list[i] = i
+    end --for
+    return list
 end --func
 
 function preprocessSong(song)
@@ -423,8 +420,8 @@ function preprocessSong(song)
                     info.tracks[i].lowestPitch = math.min(info.tracks[i].lowestPitch, e._data[1])
                     info.channels[e.channel].lowestPitch = math.min(info.channels[e.channel].highestPitch, e._data[1])
                 elseif (e._subtype == "C") then
-                    table.insert(info.tracks[i].instruments, SoundAPI.GetInfo("Instrument Name", e._data[1]))
-                    table.insert(info.channels[e.channel].instruments, SoundAPI.GetInfo("Instrument Name", e._data[1]))
+                    table.insert(info.tracks[i].instruments, e._data[1])
+                    table.insert(info.channels[e.channel].instruments, e._data[1])
                 end --if
             elseif (e._type == "Meta") then
                 if (e._subtype == "03x") then
@@ -462,23 +459,24 @@ function preprocessSong(song)
     return info
 end --func
 
-function PlaySong(song, handlers)
-    if (not handlers) then
-        handlers = {}
-    elseif (type(handlers) == "function") then
-        handlers = {handlers}
-    elseif (type(handlers) ~= "table") then
-        error("bad argument#2(handlers): expected table, got "..type(handlers))
+function PlaySong(song, eventHandlers, tickHandlers)
+    if (not eventHandlers) then
+        eventHandlers = {}
+    elseif (type(eventHandlers) == "function") then
+        eventHandlers = {eventHandlers}
+    elseif (type(eventHandlers) ~= "table") then
+        error("bad argument#2(eventHandlers): expected table, got "..type(eventHandlers))
     end --if
 
-    function changeTempo(tempo)
-        local spb = tempo / 1000000
-        local tpb = song.header.ticksPerQuarterNote
-        local tps = tpb / spb
-        song.tps = tps
-    end --func
+    if (type(song) == "string") then
+        song = status.songs[song]
+    end --if
+    if (type(song) ~= "table") then
+        error("Song is not a song"..song)
+    end --if
+    
     function applyEvent(e)
-        for i,f in pairs(handlers) do
+        for i,f in pairs(eventHandlers) do
             f(e, song)
         end --for
         if (e._type == "Meta") then
@@ -489,18 +487,30 @@ function PlaySong(song, handlers)
             end --if
         elseif (e._type == "Midi") then
             if (e._subtype == "9") then
-                SoundAPI.MidiNoteOn(song.channels[e.channel].instrumentId, e._data[1], e._data[2])
+                -- SoundAPI.MidiNoteOn(song.channels[e.channel].instrumentId, e._data[1], e._data[2])
             elseif (e._subtype == "C") then
                 song.channels[e.channel].instrumentId = e._data[1]
             end --if
         end --if
     end --func
 
-    song.currentTick = 0
-    local pointers = {}
-    for i,t in ipairs(song.tracks) do
-        pointers[i] = 1
-    end --for
+    if (song == status.currentSong) then
+        -- Don't restart the song.
+    else
+        status.currentSong = song
+        function changeTempo(tempo)
+            local spb = tempo / 1000000
+            local tpb = song.header.ticksPerQuarterNote
+            local tps = tpb / spb
+            song.tps = tps
+        end --func
+        song.currentTick = 0
+        song.pointers = {}
+        for i,t in ipairs(song.tracks) do
+            t.pointer = 1
+        end --for
+    end --if
+    status.paused = false
     
     changeTempo(song.tempo)
     while (song.currentTick < song.lastTick) do
@@ -508,49 +518,39 @@ function PlaySong(song, handlers)
         for i,t in ipairs(song.tracks) do
             repeat
                 local doBreak = false
-                local event = t.events[pointers[i]]
+                local event = t.events[t.pointer]
                 if (not event) then
-                    pointers[i] = -1
+                    t.pointer = -1
                     doBreak = true
                 elseif (event.absoluteTime <= song.currentTick) then
                     applyEvent(event)
-                    pointers[i] = pointers[i] + 1
+                    t.pointer = t.pointer + 1
                 else
                     doBreak = true
                 end --if
             until doBreak
         end --for
-        os.sleep(0)
+        repeat
+            if (song ~= status.currentSong) then
+                return
+            end
+            os.sleep(0)
+        until not status.paused
         local endTime = os.clock()
         local timeElapsed = endTime - startTime
         local ticksElapsed = song.tps * timeElapsed
         song.currentTick = song.currentTick + ticksElapsed
-        GUI.LoadingScreen("Playing Song", song.currentTick, song.lastTick)
     end --while
 end --func
 
-function loadMidiWithGUI(path)
-    local file = fs.open(path, "rb")
-    local song = {}
-    song.header = parseChunk(grabChunk(file))
-    -- GUI.LookAtObject(song.header)
-    tracks = {}
-    repeat
-        local track = grabChunk(file)
-        if (track and track._type == "MTrk") then
-            --GUI.LookAtObject(track)
-            table.insert(tracks,track)
-            trackNumber = table.getn(tracks)
-        end --if
-    until not track
-    for i, t in pairs(tracks) do
-        parseChunk(t);
-        DebugTrack(t);
-    end --for
-    print (table.getn(tracks).." Tracks")
-
-
-    song.tracks = tracks
-    pcall(file.close)
-    return song
+function Play()
+    if (not status.currentSong) then return false end --if
+    status.paused = false
+end --func
+function Stop()
+    status.paused = true
+    status.currentSong = nil
+end --func
+function Pause()
+    status.paused = true
 end --func
