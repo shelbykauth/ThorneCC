@@ -17,7 +17,7 @@ function Subscribe(action, index)
     index = index or (table.getn(__functions) + 1)
     local co = coroutine.create(action)
     __functions[index] = {action=action, co=co, times="many"}
-    if (not __isRunning) then run() end
+    run()
     os.startTimer(0)
     return index
 end --func
@@ -37,7 +37,7 @@ function SubscribeOnce(action, index)
     index = index or (table.getn(__functions) + 1)
     local co = coroutine.create(action)
     __functions[index] = {action=action, co=co, times="one"}
-    if (not __isRunning) then run() end
+    run()
     os.startTimer(0)
     return index
 end --func
@@ -47,6 +47,7 @@ function Reset()
 end --func
 
 function run()
+    if (__isRunning) then return false end
     __isRunning = true
     print("Start Round Robin")
     os.startTimer(0)
