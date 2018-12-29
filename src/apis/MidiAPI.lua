@@ -494,16 +494,17 @@ function PlaySong(song, eventHandlers, tickHandlers)
         end --if
     end --func
 
+    function changeTempo(tempo)
+        local spb = tempo / 1000000
+        local tpb = song.header.ticksPerQuarterNote
+        local tps = tpb / spb
+        song.tps = tps
+    end --func
+    
     if (song == status.currentSong) then
         -- Don't restart the song.
     else
         status.currentSong = song
-        function changeTempo(tempo)
-            local spb = tempo / 1000000
-            local tpb = song.header.ticksPerQuarterNote
-            local tps = tpb / spb
-            song.tps = tps
-        end --func
         song.currentTick = 0
         song.pointers = {}
         for i,t in ipairs(song.tracks) do
