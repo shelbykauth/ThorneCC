@@ -362,6 +362,9 @@ function Menu(items, options)
     -- item[i].suspension = "stop"|"suspend"|"continue" default suspension
     -- options.title = "Menu Title"
     -- options.helpText = "Menu Help Text"
+    local menuClosed = false
+    local function actionNil() end
+    local function actionEscape() menuClosed = true end
     if (type(items) ~= "table") then
         error("bad argument#1: table expected, got "..type(items), 2)
     end --if
@@ -373,27 +376,24 @@ function Menu(items, options)
         if (type(item.text) ~= "string") then
             error("bad argument#1: items["..i.."].text: string expected, got "..type(item.text), 2)
         end --if
+        if (not item.action) then item.action = actionNil end
+        if (item.action == "escape") then item.action = actionEscape end
         if (type(item.action) ~= "function") then
-            error("bad argument#1: items["..i.."].action: function expected, got "..type(item.text), 2)
+            error("bad argument#1: items["..i.."].action: function expected, got "..type(item.action), 2)
         end --if
         list[i] = item.text
     end --for
-    local MenuScreenEventID = "MenuScreen"
+    local MenuScreenEventID = options.eventID or "MenuScreen"
 
-    function playMenu()
-        local menuClosed = false
+    local playMenu = function()
         repeat
             local sel = SimpleSelectionScreen(list, 1, options)
-            if (not sel) then
+            if (not sel or not items[sel]) then
                 -- ThorneEvents.UnSubscribe(MenuScreenEventID)
                 menuClosed = true
+                break
             end --if
             local item = items[sel]
-            if (not item) then
-                -- ThorneEvents.UnSubscribe(MenuScreenEventID)
-                menuClosed = true
-                return sel
-            end --if
             if (item.suspension == "stop") then
                 -- ThorneEvents.UnSubscribe(MenuScreenEventID)
                 menuClosed = true
@@ -404,7 +404,7 @@ function Menu(items, options)
                 item.action()
             end --if
         until menuClosed
-        ThorneEvents.UnSubscribe("MidiLoop")
+        return sel
     end --func
 
     ThorneEvents.SubscribeOnce(playMenu, MenuScreenEventID)

@@ -245,6 +245,13 @@ function MidiNoteOn(instrumentId, pitch, velocity)
     playNote(sound, volume, pitch)
 end --func
 
+function ApplyMidiEvent(e, song)
+    if (e._type == "Midi") then
+        if (e._subtype == "9") then
+            MidiNoteOn(song.channels[e.channel].instrumentId, e._data[1], e._data[2])
+        end --if
+    end --if
+end --func
 
 function ResetConfig()
     config = ThorneAPI.CopyObject(defaultConfig)
@@ -339,4 +346,5 @@ function FindSpeakers()
     return ThorneAPI.CopyObject(config.speakers)
 end --func
 
+FindSpeakers()
 Boot()
