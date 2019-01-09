@@ -1,3 +1,4 @@
+-- v0.0.1
 local ThorneVersion = "0.0.1"
 function download(path, options)
     options = options or {}
