@@ -2,17 +2,22 @@
 local ThorneVersion = "0.0.1"
 function download(path, options)
     options = options or {}
+    if (type(path) ~= "string") then
+        error("Bad argument #1, expected string path, got "..type(path), 2)
+    end --if
     local url, localPath, file, response, fileVersion
     url = "https://shelbykauth.github.io/ThorneCC/src/"..path
-    localPath = "/ThorneCC/"..path
+    localPath = options.localPath or "/ThorneCC/"..path
     -- Check current file version
+    print(localPath)
     file = fs.open(localPath, "r")
     if (file) then
-        fileVersion = file:readLine():gsub("-- v","")
+        fileVersion = file.readLine()
+        print(fileVersion)
+        fileVersion = fileVersion:gsub("-- v","")
         file:close()
         if (ThorneVersion == fileVersion) then
-            print("Already have up-to-date file "..localPath)
-            return true, "didChange"
+            return true, {didChange = true, msg="Already have up-to-date file "..localPath}
         end --if
     end --if
     -- Get Url
@@ -35,7 +40,7 @@ function download(path, options)
     end --if
 end --func
 
-success, msg = download("/downloadThorne.lua")
+success, msg = download("/downloadThorne.lua", {localPath="/downloadThorne.lua"})
 if (msg == "didChange") then
     shell.run("downloadThorne")
     return
@@ -51,6 +56,7 @@ download("images/logo.bw.nfp", {noVersion=true})
 if (not success) then
     print("I'm sorry.  We can't seem to download the necessary files to get you started.")
     print("Please try again in a few minutes or contact Dartania Thorne by posting an issue on the github repository.")
+    print("(for github, go to https://shelbykauth.github.io/ThorneCC/).")
     return false
 end --if
 
@@ -85,10 +91,14 @@ local modules = {
 local list = http.get("https://shelbykauth.github.io/ThorneCC/src/ThorneCC_Filemap.txt")
 repeat
     local line = list.readLine()
-    print("Downloading", line)
-    success, msg = download(line)
-    if (not success) then
-        print("Download Failed!")
+    if (line) then
+        if (line ~= "/downloadThorne.lua") then
+            print("Downloading", line)
+            success, msg = download(line)
+            if (not success) then
+                print("Download Failed!")
+            end --if
+        end --if
     end --if
 until not line
 
