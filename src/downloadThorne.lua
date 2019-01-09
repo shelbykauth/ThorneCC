@@ -29,7 +29,7 @@ function download(path, options)
     else
         print("Saving to "..localPath)
         file = io.open(localPath, "w")
-        if (not options.noVersion) then
+        if (not options.noVersion and not string.find(localPath, "%.nfp$")) then
             file:write("-- v"..ThorneVersion.."\n")
         end --if
         file:write(response.readAll())
