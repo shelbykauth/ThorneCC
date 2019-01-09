@@ -145,6 +145,10 @@ function SimpleSelectionScreen(lines, selected, options)
     if (not options.before) then options.before = 0 end
     if (not options.after) then options.after = 0 end
     options.footer = "'Enter' to select, 'Backspace' to quit."
+    local lOptions =  {}
+    for x,y in pairs(options) do
+        lOptions[x] = y
+    end --for
     local controls = {
         key = {
             [keys.up] = "stepUp",
@@ -153,7 +157,7 @@ function SimpleSelectionScreen(lines, selected, options)
             [keys.enter] = "enter",
         }
     }
-    local result = ComplexSelectionScreen(lines, selected, options, controls)
+    local result = ComplexSelectionScreen(lines, selected, lOptions, controls)
     term.clear()
     term.setCursorPos(1,1)
     return result

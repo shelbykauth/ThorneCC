@@ -203,7 +203,8 @@ end --func
 function pickPitch(midiPitch, range)
     -- Returns the minecraft pitch and the number of octaves off.
     if (type(range) == "string") then
-        range = config.availableInstruments[range].range
+        local instr = config.availableInstruments[range]
+        range = instr and instr.range or {42, 66}
     end --if
     if (not range or not range[1] or not range[2]) then
         -- range should be min and max
@@ -248,7 +249,15 @@ end --func
 function ApplyMidiEvent(e, song)
     if (e._type == "Midi") then
         if (e._subtype == "9") then
-            MidiNoteOn(song.channels[e.channel].instrumentId, e._data[1], e._data[2])
+            local instrument = song.channels[e.channel].instrumentId
+            if (not instrument) then
+                if e.channel == 10 then
+                    instrumentId = 113
+                else
+                    instrumentId = 0
+                end --if
+            end --if
+            MidiNoteOn(instrument, e._data[1], e._data[2])
         end --if
     end --if
 end --func

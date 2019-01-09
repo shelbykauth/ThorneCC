@@ -254,7 +254,7 @@ function getEvent(bytes, start_index, prev_event)
             event._firstByte = prev_event._firstByte
         end --if
         event._subtype = string.sub(event._firstByte, 1, 1)
-        event.channel = string.sub(event._firstByte, 2, 2) + 1
+        event.channel = tonumber(string.sub(event._firstByte, 2, 2), 16) + 1
         if (event._subtype == "C" or event._subtype == "D") then
             event._byteLength = 1
         else
@@ -309,23 +309,24 @@ function LoadSong(path, id)
         return false
     end
     if (not id) then
-        _,_,id = string.find(path, "(%w*).mid")
+        _,_,id = string.find(path, "([%w%_%(%)]*)%.mid$")
     end --func
     if (status.songs[id]) then
-        return true
+        return status.songs[id]
     end --if
     local file = fs.open(path, "rb")
     if (not file) then
         return false
     end --if
     local song = {
+        id = id,
         channels = {},
         tempo = 500000,
         tpb = 24,
         lastTick = 0,
     }
     for i=1,16 do
-        song.channels[i] = {}
+        song.channels[i] = { instrumentId = 0 }
     end --for
     song.channels[10] = { instrumentId=116 }
 
@@ -357,7 +358,7 @@ function LoadAllSongs(path)
             LoadAllSongs(path .."/" .. f)
         end --for
     else
-        LoadSong(path)
+        pcall(function() song = LoadSong(path) end)
     end --if
 end --func
 
