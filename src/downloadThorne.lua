@@ -80,13 +80,16 @@ local modules = {
     },
 }
 
-local lines = {}
-for k,v in pairs(modules) do
-    table.insert(lines, k)
-    for i,path in pairs(v) do
-        download(path)
-    end --for
-end --for
+
+local list = http.get("https://shelbykauth.github.io/ThorneCC/src/ThorneCC_Filemap.txt")
+repeat
+    local line = list.readLine()
+    print("Downloading", line)
+    success, msg = download(line)
+    if (not success) then
+        print("Download Failed!")
+    end --if
+until not line
 
 local writeStartup = GUI.ConfirmBox("Write Startup File?")
 if (writeStartup) then
