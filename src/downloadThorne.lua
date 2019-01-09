@@ -1,5 +1,4 @@
--- v0.0.0
-local ThorneVersion = "0.0.0"
+local ThorneVersion = "0.0.1"
 function download(path, options)
     options = options or {}
     local url, localPath, file, response, fileVersion
@@ -12,7 +11,7 @@ function download(path, options)
         file:close()
         if (ThorneVersion == fileVersion) then
             print("Already have up-to-date file "..localPath)
-            return true
+            return true, "didChange"
         end --if
     end --if
     -- Get Url
@@ -34,6 +33,12 @@ function download(path, options)
         return true
     end --if
 end --func
+
+success, msg = download("/downloadThorne.lua")
+if (msg == "didChange") then
+    shell.run("downloadThorne")
+    return
+end --if
 
 local success = download("/apis/ThorneAPI.lua")
 success = success and download("/apis/GUI.lua")
