@@ -1,5 +1,5 @@
--- v0.0.1
-local ThorneVersion = "0.0.1"
+-- v0.0.2
+local ThorneVersion = "0.0.2"
 function download(path, options)
     options = options or {}
     if (type(path) ~= "string") then
